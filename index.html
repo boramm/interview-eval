@@ -621,6 +621,62 @@
 </head>
 <body>
 
+<!-- 로그인 오버레이 -->
+<div id="loginOverlay" style="
+  position:fixed;inset:0;background:var(--navy);z-index:9999;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;
+">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--gold-light);letter-spacing:2px">삼육대학교</div>
+    <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:6px">계약직원 면접 평가 시스템</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:32px 36px;width:340px">
+    <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:20px;letter-spacing:1px">사번으로 로그인</div>
+    <div style="margin-bottom:14px">
+      <input id="loginId" type="text" placeholder="사번 입력 (예: 000163)"
+        style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);
+        background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;text-align:center;letter-spacing:4px"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="margin-bottom:20px">
+      <input id="loginPw" type="password" placeholder="비밀번호 (사번과 동일)"
+        style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);
+        background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;text-align:center;letter-spacing:4px"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button onclick="doLogin()" style="width:100%;padding:13px;background:var(--gold);color:var(--navy);
+      font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
+      로그인
+    </button>
+    <div id="loginError" style="color:#fca5a5;font-size:12px;text-align:center;margin-top:12px;display:none">
+      사번이 올바르지 않습니다. 다시 확인해주세요.
+    </div>
+  </div>
+  <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:24px">아이디·비밀번호 = 본인 사번</div>
+</div>
+
+<!-- 최종제출 확인 모달 -->
+<div class="modal-overlay" id="submitModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ 최종 제출 확인</span>
+    </div>
+    <div class="modal-body" style="gap:10px">
+      <div style="background:#fef3c7;border-radius:8px;padding:14px;font-size:13px;color:#92400e;line-height:1.8">
+        <strong>최종 제출 전 확인해주세요.</strong><br>
+        • 제출 후에는 <strong>수정이 불가능</strong>합니다<br>
+        • 최종 제출은 <strong>서명과 동일한 효과</strong>를 가집니다<br>
+        • 제출 일시와 함께 시스템에 영구 기록됩니다
+      </div>
+      <div id="submitSummary" style="font-size:13px;color:var(--gray-600);padding:10px;background:var(--gray-50);border-radius:8px;line-height:1.8"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" style="color:var(--gray-600)" onclick="document.getElementById('submitModal').classList.remove('open')">취소 (계속 수정)</button>
+      <button class="btn btn-green" onclick="doFinalSubmit()">✅ 최종 제출</button>
+    </div>
+  </div>
+</div>
+
 <!-- 상단 헤더 -->
 <div class="header">
   <div class="header-left">
@@ -631,9 +687,14 @@
       <span class="edit-icon">✏️</span>
     </div>
   </div>
-  <div class="header-right">
-    <button class="btn btn-outline btn-sm" onclick="exportData()">📥 데이터 백업</button>
+  <div class="header-right" style="gap:12px">
+    <div id="userInfo" style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px">
+      <span id="userName" style="font-weight:600;color:var(--gold-light)"></span>
+      <span id="userTitle" style="opacity:0.7"></span>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="exportData()">📥 백업</button>
     <button class="btn btn-gold btn-sm" onclick="showTab('dashboard')">📊 대시보드</button>
+    <button class="btn btn-outline btn-sm" onclick="doLogout()" style="opacity:0.6">로그아웃</button>
   </div>
 </div>
 
@@ -699,7 +760,8 @@
         </div>
 
         <div class="eval-footer" id="evalFooter" style="display:none">
-          <button class="save-btn" id="saveBtn" onclick="saveEvaluation()">💾 평가 결과 저장</button>
+          <button class="save-btn" id="saveBtn" onclick="saveEvaluation()" style="flex:2">💾 임시 저장</button>
+          <button class="save-btn" id="submitBtn" onclick="openSubmitModal()" style="flex:1;background:var(--green);font-size:13px">✅ 최종 제출</button>
         </div>
       </div>
     </div>
@@ -748,25 +810,7 @@
         <div style="padding:16px" id="evalDetailList"></div>
       </div>
 
-      <!-- 서명란 -->
-      <div class="print-signature" style="background:white;border-radius:10px;box-shadow:var(--shadow);padding:20px">
-        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:16px">서명란</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
-          <div style="text-align:center;padding:16px;border:1px solid var(--gray-200);border-radius:8px">
-            <div style="font-size:12px;color:var(--gray-500);margin-bottom:30px">면접위원장</div>
-            <div style="border-top:1px solid var(--gray-300);padding-top:6px;font-size:11px;color:var(--gray-400)">(서명)</div>
-          </div>
-          <div style="text-align:center;padding:16px;border:1px solid var(--gray-200);border-radius:8px">
-            <div style="font-size:12px;color:var(--gray-500);margin-bottom:30px">인사담당자</div>
-            <div style="border-top:1px solid var(--gray-300);padding-top:6px;font-size:11px;color:var(--gray-400)">(서명)</div>
-          </div>
-          <div style="text-align:center;padding:16px;border:1px solid var(--gray-200);border-radius:8px">
-            <div style="font-size:12px;color:var(--gray-500);margin-bottom:30px">최종승인</div>
-            <div style="border-top:1px solid var(--gray-300);padding-top:6px;font-size:11px;color:var(--gray-400)">(서명)</div>
-          </div>
-        </div>
-        <div style="margin-top:12px;text-align:right;font-size:11px;color:var(--gray-400)" id="printDate"></div>
-      </div>
+      <div style="text-align:right;font-size:11px;color:var(--gray-400);padding:8px 0" id="printDate"></div>
     </div>
 
     <!-- 설정 탭 -->
@@ -896,18 +940,34 @@ function doGet(e) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 데이터 & 상태
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 평가위원 계정 (사번 = 아이디 & 비밀번호)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const EVALUATORS = [
+  { id: '000163', name: '김성완', title: '사무처장', scope: 'all' },
+  { id: '000206', name: '김현호', title: '총무인사팀장', scope: 'all' },
+  { id: '000218', name: '최경천', title: '교목처장', scope: 'all' },
+  { id: '000105', name: '최원신', title: '교목처 리더십센터 팀장', scope: '리더십센터' },
+  { id: '000170', name: '박대성', title: '총무인사팀 경비 과장', scope: '경비' },
+  { id: '000203', name: '김두한', title: '국제처 팀장', scope: '국제처' },
+];
+
+const DEFAULT_APPLICANTS = [
+  { id: 'a001', name: '전희영', department: '국제처', deptGroup: '국제처', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1EL9ytIk7Bq4W7f6aQf2BfJ0EY10YPMIT/preview' },
+  { id: 'a002', name: '채예진', department: '국제처', deptGroup: '국제처', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1wNw6RZQKmuTl4XjtbMx3OtHl6SUUmn27/preview' },
+  { id: 'a003', name: '김정규', department: '경비', deptGroup: '경비', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1Fj41n_56T5vNr09hiK6TV9bE8QAqvPh2/preview' },
+  { id: 'a004', name: '양해문', department: '경비', deptGroup: '경비', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1ux9BQcVqPjOmEZNNsptrNViO_ntCOA4F/preview' },
+  { id: 'a005', name: '유봉기', department: '경비', deptGroup: '경비', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1X26nXzvw1mLiel95NpSu1P6MaIPkzgE0/preview' },
+  { id: 'a006', name: '박종민', department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/11qQLDGe2IV8nb9n3xcULiAjsl8TL0K8x/preview' },
+  { id: 'a007', name: '주상빈', department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1bOWhbdkfS5dRD-SgX4hlhF4TV3zASwV9/preview' },
+  { id: 'a008', name: '황재영', department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1BDTW9jbHK9dHXVy_2iuI2mlOMhjOHIw9/preview' },
+];
+
+let currentUser = null; // 로그인한 평가위원
+
 let appData = {
   projectTitle: '2026년 5월 1일부 계약직원 채용 면접평가',
-  applicants: [
-    { id: 'a001', name: '전희영', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1EL9ytIk7Bq4W7f6aQf2BfJ0EY10YPMIT/preview' },
-    { id: 'a002', name: '채예진', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1wNw6RZQKmuTl4XjtbMx3OtHl6SUUmn27/preview' },
-    { id: 'a003', name: '김정규', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1Fj41n_56T5vNr09hiK6TV9bE8QAqvPh2/preview' },
-    { id: 'a004', name: '양해문', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1ux9BQcVqPjOmEZNNsptrNViO_ntCOA4F/preview' },
-    { id: 'a005', name: '유봉기', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1X26nXzvw1mLiel95NpSu1P6MaIPkzgE0/preview' },
-    { id: 'a006', name: '박종민', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/11qQLDGe2IV8nb9n3xcULiAjsl8TL0K8x/preview' },
-    { id: 'a007', name: '주상빈', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1bOWhbdkfS5dRD-SgX4hlhF4TV3zASwV9/preview' },
-    { id: 'a008', name: '황재영', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1BDTW9jbHK9dHXVy_2iuI2mlOMhjOHIw9/preview' },
-  ],
+  applicants: DEFAULT_APPLICANTS,
   evaluations: [],
   remarks: {}
 };
@@ -942,6 +1002,94 @@ const EVAL_ITEMS = {
 
 const JOB_LABELS = { office: '사무직', labor: '노무직', research: '연구직' };
 const JOB_BADGES = { office: 'badge-office', labor: 'badge-labor', research: 'badge-research' };
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 로그인 / 로그아웃
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function doLogin() {
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value.trim();
+  const evaluator = EVALUATORS.find(e => e.id === id && e.id === pw);
+  if (!evaluator) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  currentUser = evaluator;
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('userName').textContent = evaluator.name;
+  document.getElementById('userTitle').textContent = evaluator.title;
+  // 면접위원 이름 자동 세팅
+  const ef = document.getElementById('ef_evaluatorName');
+  if (ef) ef.value = evaluator.name;
+  renderApplicantList();
+  showToast(evaluator.name + '님, 환영합니다!', 'success');
+}
+
+function doLogout() {
+  if (!confirm('로그아웃 하시겠습니까?')) return;
+  currentUser = null;
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 최종 제출
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openSubmitModal() {
+  if (!currentApplicantId || !currentUser) return;
+  const a = appData.applicants.find(x => x.id === currentApplicantId);
+  const myEvals = appData.evaluations.filter(e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name);
+  if (myEvals.length === 0) {
+    showToast('먼저 임시 저장을 해주세요', 'error'); return;
+  }
+  const lastEval = myEvals[myEvals.length - 1];
+  if (lastEval.submitted) {
+    showToast('이미 최종 제출된 평가입니다', 'error'); return;
+  }
+  document.getElementById('submitSummary').innerHTML =
+    `<strong>지원자:</strong> ${a.name} (${a.department})<br>
+     <strong>평가위원:</strong> ${currentUser.name}<br>
+     <strong>최종점수:</strong> ${lastEval.finalScore}점<br>
+     <strong>제출일시:</strong> ${new Date().toLocaleString('ko-KR')}`;
+  document.getElementById('submitModal').classList.add('open');
+}
+
+function doFinalSubmit() {
+  if (!currentApplicantId || !currentUser) return;
+  const myEvals = appData.evaluations.filter(e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name);
+  if (myEvals.length === 0) return;
+  const lastEval = myEvals[myEvals.length - 1];
+  lastEval.submitted = true;
+  lastEval.submittedAt = new Date().toISOString();
+  saveToStorage();
+
+  // GAS에 최종제출 기록
+  const gasUrl = localStorage.getItem('gasUrl');
+  if (gasUrl) {
+    const a = appData.applicants.find(x => x.id === currentApplicantId);
+    fetch(gasUrl, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({
+        projectTitle: appData.projectTitle,
+        applicantName: a?.name, jobType: JOB_LABELS[a?.jobType],
+        department: a?.department, evaluatorName: currentUser.name,
+        evalDate: lastEval.evalDate,
+        score1: lastEval.scores.s1, score2: lastEval.scores.s2,
+        score3: lastEval.scores.s3, score4: lastEval.scores.s4,
+        score5: lastEval.scores.s5,
+        totalScore: lastEval.subTotal, bohunPoint: lastEval.bohunPoint,
+        finalScore: lastEval.finalScore, grade: lastEval.grade,
+        comment: '[최종제출] ' + (lastEval.comment || '')
+      })
+    });
+  }
+
+  document.getElementById('submitModal').classList.remove('open');
+  renderApplicantList();
+  showToast('최종 제출 완료! 수정이 불가능합니다.', 'success');
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 초기화
@@ -1026,28 +1174,38 @@ function renderApplicantList() {
   const count = document.getElementById('applicantCount');
   count.textContent = appData.applicants.length + '명';
 
-  if (appData.applicants.length === 0) {
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">등록된 지원자가 없습니다<br><br>아래 버튼으로 등록하세요</div>';
+  // 부서 필터링
+  let visible = appData.applicants;
+  if (currentUser && currentUser.scope !== 'all') {
+    visible = appData.applicants.filter(a => a.deptGroup === currentUser.scope);
+  }
+
+  if (visible.length === 0) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">평가할 지원자가 없습니다</div>';
     return;
   }
 
-  list.innerHTML = appData.applicants.map(a => {
+  list.innerHTML = visible.map(a => {
     const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const myEval = currentUser ? evals.find(e => e.evaluatorName === currentUser.name) : null;
+    const isSubmitted = myEval?.submitted;
     const evaluated = evals.length > 0;
     return `
     <div class="applicant-card ${evaluated ? 'evaluated' : ''} ${currentApplicantId === a.id ? 'active' : ''}"
          onclick="selectApplicant('${a.id}')" id="card_${a.id}">
       <div class="applicant-name">${a.name}</div>
       <div class="applicant-meta">${a.department || '-'}</div>
-      <div>
+      <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
         <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
         ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun">보훈</span>' : ''}
-        ${evaluated ? `<span class="applicant-badge" style="background:#dcfce7;color:#166534">${evals.length}명 평가완료</span>` : ''}
+        ${isSubmitted ? '<span class="applicant-badge" style="background:#dcfce7;color:#166534">✅ 제출완료</span>' :
+          myEval ? '<span class="applicant-badge" style="background:#fef3c7;color:#92400e">임시저장</span>' : ''}
       </div>
+      ${currentUser && currentUser.scope === 'all' ? `
       <div class="card-actions">
         <button class="icon-btn icon-btn-edit" onclick="event.stopPropagation();openEditModal('${a.id}')">✏️</button>
         <button class="icon-btn icon-btn-del" onclick="event.stopPropagation();deleteApplicant('${a.id}')">🗑️</button>
-      </div>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1089,13 +1247,21 @@ function renderEvalForm(a) {
   // 이전 내 평가 불러오기 (evaluatorName 기준)
   const savedEval = null; // 새 평가로 시작
 
+  // 내 기존 평가 불러오기
+  const myPrevEval = currentUser
+    ? appData.evaluations.filter(e => e.applicantId === a.id && e.evaluatorName === currentUser.name).slice(-1)[0]
+    : null;
+  const isSubmitted = myPrevEval?.submitted;
+  const disabledAttr = isSubmitted ? 'disabled style="background:var(--gray-100);color:var(--gray-400)"' : '';
+
   const html = `
+    ${isSubmitted ? '<div style="background:#d1fae5;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:4px">✅ 최종 제출 완료 — 수정이 불가능합니다</div>' : ''}
     <div class="eval-section">
       <div class="eval-section-title">평가 기본 정보</div>
       <div class="eval-meta-grid">
         <div class="eval-field">
-          <label>면접위원 성함 *</label>
-          <input type="text" id="ef_evaluatorName" placeholder="홍길동">
+          <label>면접위원 성함</label>
+          <input type="text" id="ef_evaluatorName" value="${currentUser ? currentUser.name : ''}" readonly style="background:var(--gray-50);color:var(--gray-600)">
         </div>
         <div class="eval-field">
           <label>평가 일자 *</label>
@@ -1225,10 +1391,18 @@ function calcTotal() {
 // 평가 저장
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function saveEvaluation() {
-  const evaluatorName = document.getElementById('ef_evaluatorName')?.value?.trim();
-  const evalDate = document.getElementById('ef_evalDate')?.value;
+  if (!currentUser) { showToast('로그인이 필요합니다', 'error'); return; }
 
-  if (!evaluatorName) { showToast('면접위원 성함을 입력해주세요', 'error'); return; }
+  // 최종제출 여부 확인
+  const existingIdx = appData.evaluations.findLastIndex(
+    e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name
+  );
+  if (existingIdx >= 0 && appData.evaluations[existingIdx].submitted) {
+    showToast('이미 최종 제출된 평가는 수정할 수 없습니다', 'error'); return;
+  }
+
+  const evaluatorName = currentUser.name;
+  const evalDate = document.getElementById('ef_evalDate')?.value;
   if (!evalDate) { showToast('평가 일자를 선택해주세요', 'error'); return; }
 
   const grade = document.getElementById('ef_grade')?.value;
@@ -1262,7 +1436,15 @@ async function saveEvaluation() {
     comment: document.getElementById('ef_comment')?.value || ''
   };
 
-  appData.evaluations.push(evalRecord);
+  // 기존 평가 있으면 업데이트, 없으면 추가
+  const prevIdx = appData.evaluations.findLastIndex(
+    e => e.applicantId === currentApplicantId && e.evaluatorName === evaluatorName
+  );
+  if (prevIdx >= 0) {
+    appData.evaluations[prevIdx] = { ...appData.evaluations[prevIdx], ...evalRecord, id: appData.evaluations[prevIdx].id };
+  } else {
+    appData.evaluations.push(evalRecord);
+  }
   saveToStorage();
 
   // GAS 전송 — GET+쿼리스트링 방식 (CORS 완전 우회)
