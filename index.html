@@ -1016,12 +1016,20 @@ function doLogin() {
     return;
   }
   currentUser = evaluator;
+  currentApplicantId = null;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('userName').textContent = evaluator.name;
   document.getElementById('userTitle').textContent = evaluator.title;
-  // 면접위원 이름 자동 세팅
-  const ef = document.getElementById('ef_evaluatorName');
-  if (ef) ef.value = evaluator.name;
+  // PDF 패널 초기화
+  document.getElementById('pdfViewer').style.display = 'none';
+  document.getElementById('pdfViewer').src = '';
+  document.getElementById('pdfPlaceholder').style.display = 'flex';
+  document.getElementById('pdfPanelTitle').textContent = '📄 자기소개서 / 이력서';
+  // 평가 패널 초기화
+  document.getElementById('evalPanelName').textContent = '지원자를 선택하세요';
+  document.getElementById('evalPanelSub').textContent = '좌측 목록에서 평가할 지원자를 클릭하세요';
+  document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>👈 좌측에서 지원자를 선택해주세요</p></div>';
+  document.getElementById('evalFooter').style.display = 'none';
   renderApplicantList();
   showToast(evaluator.name + '님, 환영합니다!', 'success');
 }
