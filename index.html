@@ -1413,13 +1413,13 @@ function renderEvalForm(a) {
       ${a.bohun === 'yes' ? `
       <div class="bohun-box">
         <div class="bohun-check">
-          <input type="checkbox" id="bohunCheck" ${savedBohunChecked ? 'checked' : ''} onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
+          <input type="checkbox" id="bohunCheck" ${(savedBohunChecked || !myPrevEval) ? 'checked' : ''} onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
           <label for="bohunCheck">보훈 가점 적용</label>
         </div>
         <div class="bohun-score-wrap">
           <label>가점</label>
           <select id="bohunPoints" onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
-            ${[5,6,7,8,9,10].map(v => `<option value="${v}" ${savedBohunPoint === v ? 'selected' : ''}>${v}점</option>`).join('')}
+            ${[5,6,7,8,9,10].map(v => `<option value="${v}" ${savedBohunPoint === v ? 'selected' : v === 5 && !myPrevEval ? 'selected' : ''}>${v}점</option>`).join('')}
           </select>
         </div>
       </div>` : ''}
@@ -1552,12 +1552,11 @@ async function saveEvaluation() {
   }
   saveToStorage();
 
-  // GAS 전송 — GET+쿼리스트링 방식 (CORS 완전 우회)
-  const gasUrl = localStorage.getItem('gasUrl');
-  if (gasUrl) {
+  // 임시저장은 GAS 전송 안 함 — 최종제출 시에만 Sheets에 기록
+  if (false && localStorage.getItem('gasUrl')) {
     const a = appData.applicants.find(x => x.id === currentApplicantId);
     try {
-      sendToGAS(gasUrl, {
+      sendToGAS(localStorage.getItem('gasUrl'), {
         projectTitle: appData.projectTitle,
         applicantName: a?.name || '',
         jobType: JOB_LABELS[a?.jobType] || '',
