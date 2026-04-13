@@ -1329,6 +1329,10 @@ function selectApplicant(id) {
   currentApplicantId = id;
   renderApplicantList();
 
+  // 평가 패널 스크롤 맨 위로
+  const evalBody = document.getElementById('evalBody');
+  if (evalBody) evalBody.scrollTop = 0;
+
   // PDF — Drive 링크 있으면 바로 표시
   const viewer = document.getElementById('pdfViewer');
   if (a.driveUrl) {
