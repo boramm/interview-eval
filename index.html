@@ -802,6 +802,21 @@
         </table>
       </div>
 
+      <!-- 미평가/결시 현황 -->
+      <div class="result-table-wrap">
+        <div class="result-table-header">
+          <span class="result-table-title">⏳ 미평가 / 결시 현황</span>
+        </div>
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>가번호</th><th>성명</th><th>직군</th><th>지원부서</th><th>상태</th>
+            </tr>
+          </thead>
+          <tbody id="pendingTableBody"></tbody>
+        </table>
+      </div>
+
       <!-- 평가 상세 -->
       <div class="result-table-wrap" id="detailSection">
         <div class="result-table-header">
@@ -1551,30 +1566,56 @@ function updateDashboard() {
     };
   }).sort((a, b) => b.finalScore - a.finalScore);
 
-  // 순위표
+  // 순위표 — 평가 완료된 지원자만
   const tbody = document.getElementById('resultTableBody');
-  tbody.innerHTML = ranked.map((a, i) => {
-    const rank = i + 1;
-    const rankBadge = rank <= 3
-      ? `<span class="rank-badge rank-${rank}">${rank}</span>`
-      : `<span class="rank-badge rank-other">${rank}</span>`;
+  const evaluatedList = ranked.filter(a => a.evalCount > 0 && !a.absent);
+  const pendingList = appData.applicants.filter(a => !ranked.find(r => r.id === a.id && r.evalCount > 0) );
+
+  if (evaluatedList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="padding:30px;text-align:center;color:var(--gray-400);font-size:14px">
+      아직 평가된 지원자가 없습니다.<br>평가를 완료하면 자동으로 순위가 집계됩니다.
+    </td></tr>`;
+  } else {
     const gradeMap = {'1':'①','2':'②','3':'③','4':'④','5':'⑤'};
-    const gradeStr = a.grades.length ? a.grades.map(g => gradeMap[g]||g).join(', ') : '-';
-    return `
-    <tr>
-      <td>${rankBadge}</td>
-      <td><strong>${a.name}</strong></td>
-      <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span></td>
-      <td>${a.department || '-'}</td>
-      <td>${a.evalCount}명</td>
-      <td>${a.evalCount > 0 ? a.avgScore + '점' : '<span style="color:var(--gray-400)">미평가</span>'}</td>
-      <td>${a.bohunPoint > 0 ? '+' + a.bohunPoint + '점' : '-'}</td>
-      <td><strong style="color:var(--navy);font-size:15px">${a.evalCount > 0 ? a.finalScore + '점' : '-'}</strong></td>
-      <td style="font-size:12px">${gradeStr}</td>
-      <td><input class="remark-input" value="${appData.remarks[a.id] || ''}"
-        onchange="appData.remarks['${a.id}']=this.value;saveToStorage()" placeholder="특이사항..."></td>
-    </tr>`;
-  }).join('');
+    tbody.innerHTML = evaluatedList.map((a, i) => {
+      const rank = i + 1;
+      const rankBadge = rank <= 3
+        ? `<span class="rank-badge rank-${rank}">${rank}</span>`
+        : `<span class="rank-badge rank-other">${rank}</span>`;
+      const gradeStr = a.grades.length ? a.grades.map(g => gradeMap[g]||g).join(', ') : '-';
+      return `
+      <tr>
+        <td>${rankBadge}</td>
+        <td><strong>${a.num ? a.num + '. ' : ''}${a.name}</strong></td>
+        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+            ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun" style="margin-left:3px">보훈</span>' : ''}</td>
+        <td>${a.department || '-'}</td>
+        <td>${a.evalCount}명</td>
+        <td>${a.avgScore}점</td>
+        <td>${a.bohunPoint > 0 ? '+' + a.bohunPoint + '점' : '-'}</td>
+        <td><strong style="color:var(--navy);font-size:15px">${a.finalScore}점</strong></td>
+        <td style="font-size:12px">${gradeStr}</td>
+        <td><input class="remark-input" value="${appData.remarks[a.id] || ''}"
+          onchange="appData.remarks['${a.id}']=this.value;saveToStorage()" placeholder="특이사항..."></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // 미평가/결시 현황
+  const pendingTbody = document.getElementById('pendingTableBody');
+  if (pendingTbody) {
+    pendingTbody.innerHTML = appData.applicants.filter(a => {
+      const r = ranked.find(x => x.id === a.id);
+      return !r || r.evalCount === 0;
+    }).map(a => `
+      <tr style="${a.absent ? 'opacity:0.5' : ''}">
+        <td>${a.num || '-'}</td>
+        <td><strong>${a.name}</strong>${a.absent ? ' <span style="color:var(--red);font-size:12px">🚫 결시</span>' : ''}</td>
+        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span></td>
+        <td>${a.department || '-'}</td>
+        <td style="color:var(--gray-400)">${a.absent ? '결시' : '대기중'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:16px">모든 지원자 평가 완료!</td></tr>';
+  }
 
   // 상세 평가 목록
   const detailHtml = ranked.filter(a => a.evalCount > 0).map(a => {
