@@ -785,16 +785,22 @@
         </div>
         <table class="result-table" id="resultTable">
           <thead>
-            <tr>
+            <tr id="resultTableHead">
               <th>순위</th>
+              <th>부서</th>
+              <th>가번호</th>
               <th>성명</th>
               <th>직군</th>
-              <th>지원부서</th>
-              <th>평가위원 수</th>
-              <th>평균점수</th>
-              <th>보훈가점</th>
-              <th>최종점수</th>
-              <th>종합의견</th>
+              <th id="evalCol1"></th>
+              <th id="evalCol2"></th>
+              <th id="evalCol3"></th>
+              <th id="evalCol4"></th>
+              <th id="evalCol5"></th>
+              <th id="evalCol6"></th>
+              <th>합계</th>
+              <th>평균</th>
+              <th>보훈</th>
+              <th>최종</th>
               <th>비고</th>
             </tr>
           </thead>
@@ -802,20 +808,8 @@
         </table>
       </div>
 
-      <!-- 미평가/결시 현황 -->
-      <div class="result-table-wrap">
-        <div class="result-table-header">
-          <span class="result-table-title">⏳ 미평가 / 결시 현황</span>
-        </div>
-        <table class="result-table">
-          <thead>
-            <tr>
-              <th>가번호</th><th>성명</th><th>직군</th><th>지원부서</th><th>상태</th>
-            </tr>
-          </thead>
-          <tbody id="pendingTableBody"></tbody>
-        </table>
-      </div>
+      <!-- 미평가/결시 현황 - 순위표에 통합됨 (숨김) -->
+      <div style="display:none"><tbody id="pendingTableBody"></tbody></div>
 
       <!-- 평가 상세 -->
       <div class="result-table-wrap" id="detailSection">
@@ -1588,32 +1582,84 @@ function updateDashboard() {
   const evaluatedList = ranked.filter(a => a.evalCount > 0 && !a.absent);
   const pendingList = appData.applicants.filter(a => !ranked.find(r => r.id === a.id && r.evalCount > 0) );
 
-  if (evaluatedList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="padding:30px;text-align:center;color:var(--gray-400);font-size:14px">
-      아직 평가된 지원자가 없습니다.<br>평가를 완료하면 자동으로 순위가 집계됩니다.
+  // 평가자 목록 추출 (전체 평가에서 고유 평가자 이름 수집)
+  const allEvaluatorNames = [...new Set(appData.evaluations.map(e => e.evaluatorName))];
+  const maxCols = 6; // 최대 평가자 컬럼 수
+  const evalNames = allEvaluatorNames.slice(0, maxCols);
+
+  // 헤더 평가자 이름 업데이트
+  for (let i = 0; i < maxCols; i++) {
+    const th = document.getElementById('evalCol' + (i+1));
+    if (th) th.textContent = evalNames[i] || '';
+  }
+
+  // 전체 지원자 순위표 (미평가 포함)
+  const allRanked = appData.applicants.map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const avgScore = evals.length > 0 ? evals.reduce((s,e) => s + e.subTotal, 0) / evals.length : 0;
+    const bohunPoint = evals.length > 0 ? (evals[evals.length-1].bohunPoint || 0) : 0;
+    return {
+      ...a,
+      evals,
+      evalCount: evals.length,
+      avgScore: Math.round(avgScore * 10) / 10,
+      bohunPoint,
+      finalScore: Math.round((avgScore + bohunPoint) * 10) / 10,
+    };
+  }).sort((a,b) => {
+    if (a.absent && !b.absent) return 1;
+    if (!a.absent && b.absent) return -1;
+    return b.finalScore - a.finalScore;
+  });
+
+  // 순위 부여 (결시/미평가 제외)
+  let rankCounter = 0;
+  const totalCols = evalNames.length + 7; // 순위+부서+가번호+성명+직군+합계+평균+보훈+최종+비고
+
+  if (allRanked.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" style="padding:30px;text-align:center;color:var(--gray-400);font-size:14px">
+      지원자가 없습니다.
     </td></tr>`;
   } else {
-    const gradeMap = {'1':'①','2':'②','3':'③','4':'④','5':'⑤'};
-    tbody.innerHTML = evaluatedList.map((a, i) => {
-      const rank = i + 1;
-      const rankBadge = rank <= 3
-        ? `<span class="rank-badge rank-${rank}">${rank}</span>`
-        : `<span class="rank-badge rank-other">${rank}</span>`;
-      const gradeStr = a.grades.length ? a.grades.map(g => gradeMap[g]||g).join(', ') : '-';
+    tbody.innerHTML = allRanked.map((a) => {
+      const hasEval = a.evalCount > 0 && !a.absent;
+      if (hasEval) rankCounter++;
+      const rank = hasEval ? rankCounter : null;
+      const rankBadge = rank === null
+        ? '<span style="color:var(--gray-300)">—</span>'
+        : rank <= 3
+          ? `<span class="rank-badge rank-${rank}">${rank}</span>`
+          : `<span class="rank-badge rank-other">${rank}</span>`;
+
+      // 평가자별 점수 컬럼
+      const evalCols = evalNames.map(name => {
+        const ev = a.evals.find(e => e.evaluatorName === name);
+        if (a.absent) return `<td style="color:var(--red);font-size:12px">결시</td>`;
+        return ev
+          ? `<td style="font-weight:600;color:var(--navy)">${ev.finalScore}</td>`
+          : `<td style="color:var(--gray-300)">—</td>`;
+      }).join('');
+
+      // 빈 컬럼 채우기
+      const emptyCols = Array(maxCols - evalNames.length).fill('<td></td>').join('');
+
+      const sumScore = a.evals.reduce((s,e) => s + e.finalScore, 0);
+      const rowStyle = a.absent ? 'opacity:0.45;background:#fef2f2' : '';
+
       return `
-      <tr>
+      <tr style="${rowStyle}">
         <td>${rankBadge}</td>
-        <td><strong>${a.num ? a.num + '. ' : ''}${a.name}</strong></td>
-        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
-            ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun" style="margin-left:3px">보훈</span>' : ''}</td>
-        <td>${a.department || '-'}</td>
-        <td>${a.evalCount}명</td>
-        <td>${a.avgScore}점</td>
-        <td>${a.bohunPoint > 0 ? '+' + a.bohunPoint + '점' : '-'}</td>
-        <td><strong style="color:var(--navy);font-size:15px">${a.finalScore}점</strong></td>
-        <td style="font-size:12px">${gradeStr}</td>
+        <td style="font-size:12px">${a.department || '-'}</td>
+        <td style="font-size:12px;color:var(--gray-500)">${a.num || '-'}</td>
+        <td><strong>${a.name}</strong>${a.absent ? ' <span style="font-size:11px;color:var(--red)">결시</span>' : ''}</td>
+        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>${a.bohun==='yes'?'<span class="applicant-badge badge-bohun" style="margin-left:2px">보훈</span>':''}</td>
+        ${evalCols}${emptyCols}
+        <td style="font-weight:700;color:var(--gray-700)">${a.evalCount > 0 && !a.absent ? sumScore : '—'}</td>
+        <td style="font-weight:700;color:var(--gray-700)">${a.evalCount > 0 && !a.absent ? a.avgScore : '—'}</td>
+        <td>${a.bohunPoint > 0 ? '<span style="color:var(--green);font-weight:600">+' + a.bohunPoint + '</span>' : '—'}</td>
+        <td><strong style="color:var(--navy);font-size:14px">${a.evalCount > 0 && !a.absent ? a.finalScore : '—'}</strong></td>
         <td><input class="remark-input" value="${appData.remarks[a.id] || ''}"
-          onchange="appData.remarks['${a.id}']=this.value;saveToStorage()" placeholder="특이사항..."></td>
+          onchange="appData.remarks['${a.id}']=this.value;saveToStorage()" placeholder="비고..."></td>
       </tr>`;
     }).join('');
   }
