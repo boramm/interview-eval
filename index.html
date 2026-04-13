@@ -1359,7 +1359,7 @@ function renderEvalForm(a) {
   const savedScores = myPrevEval ? myPrevEval.scores : {};
   const savedGrade = myPrevEval ? myPrevEval.grade : '';
   const savedComment = myPrevEval ? myPrevEval.comment : '';
-  const savedDate = myPrevEval ? myPrevEval.evalDate : new Date().toISOString().slice(0,10);
+  const savedDate = new Date().toISOString().slice(0,10); // 항상 오늘 날짜
   const savedBohunPoint = myPrevEval ? myPrevEval.bohunPoint : 0;
   const savedBohunChecked = savedBohunPoint > 0;
 
