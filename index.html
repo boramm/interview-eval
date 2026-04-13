@@ -400,10 +400,10 @@
   .dashboard-view {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 16px 20px;
     display: none;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
   }
   .dashboard-view.active { display: flex; }
 
@@ -412,21 +412,21 @@
     align-items: center;
     justify-content: space-between;
   }
-  .dashboard-title { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700; color: var(--navy); }
+  .dashboard-title { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 700; color: var(--navy); }
 
-  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .stat-card {
     background: white;
-    border-radius: 10px;
-    padding: 16px;
+    border-radius: 8px;
+    padding: 10px 14px;
     box-shadow: var(--shadow);
-    border-left: 4px solid var(--navy);
+    border-left: 3px solid var(--navy);
   }
   .stat-card.green { border-left-color: var(--green); }
   .stat-card.gold { border-left-color: var(--gold); }
   .stat-card.red { border-left-color: var(--red); }
   .stat-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-value { font-size: 28px; font-weight: 700; color: var(--navy); margin-top: 4px; }
+  .stat-value { font-size: 20px; font-weight: 700; color: var(--navy); margin-top: 2px; }
 
   .result-table-wrap {
     background: white;
@@ -435,17 +435,17 @@
     overflow: hidden;
   }
   .result-table-header {
-    padding: 14px 20px;
+    padding: 10px 16px;
     background: var(--navy);
     color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .result-table-title { font-size: 14px; font-weight: 700; }
+  .result-table-title { font-size: 13px; font-weight: 700; }
   .result-table { width: 100%; border-collapse: collapse; }
   .result-table th {
-    padding: 10px 14px;
+    padding: 7px 10px;
     text-align: center;
     font-size: 11px;
     font-weight: 700;
@@ -456,9 +456,9 @@
     letter-spacing: 0.3px;
   }
   .result-table td {
-    padding: 10px 14px;
+    padding: 7px 10px;
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
     border-bottom: 1px solid var(--gray-100);
     color: var(--gray-700);
   }
@@ -495,13 +495,13 @@
     overflow: hidden;
   }
   .eval-detail-card-header {
-    padding: 10px 16px;
+    padding: 8px 14px;
     background: var(--gray-50);
     border-bottom: 1px solid var(--gray-200);
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .eval-detail-name { font-weight: 700; font-size: 14px; }
-  .eval-detail-body { padding: 12px 16px; }
+  .eval-detail-name { font-weight: 700; font-size: 13px; }
+  .eval-detail-body { padding: 10px 14px; }
   .eval-scores-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
   .eval-score-cell { text-align: center; }
   .eval-score-cell-label { font-size: 10px; color: var(--gray-500); margin-bottom: 2px; }
@@ -1649,7 +1649,7 @@ function updateDashboard() {
       <div class="eval-detail-body">
         ${evals.map(ev => `
           <div style="margin-bottom:12px;padding:10px;background:var(--gray-50);border-radius:6px">
-            <div style="font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:8px">
+            <div style="font-size:11px;font-weight:700;color:var(--gray-600);margin-bottom:6px">
               👤 ${ev.evaluatorName} · ${ev.evalDate}
               &nbsp;<span style="color:var(--navy)">소계 ${ev.subTotal}점${ev.bohunPoint > 0 ? ' + 보훈 ' + ev.bohunPoint + '점' : ''} = <strong>${ev.finalScore}점</strong></span>
             </div>
