@@ -954,14 +954,14 @@ const EVALUATORS = [
 ];
 
 const DEFAULT_APPLICANTS = [
-  { id: 'a001', name: '전희영', department: '국제처', deptGroup: '국제처', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1EL9ytIk7Bq4W7f6aQf2BfJ0EY10YPMIT/preview' },
-  { id: 'a002', name: '채예진', department: '국제처', deptGroup: '국제처', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1wNw6RZQKmuTl4XjtbMx3OtHl6SUUmn27/preview' },
-  { id: 'a003', name: '김정규', department: '경비', deptGroup: '경비', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1Fj41n_56T5vNr09hiK6TV9bE8QAqvPh2/preview' },
-  { id: 'a004', name: '양해문', department: '경비', deptGroup: '경비', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1ux9BQcVqPjOmEZNNsptrNViO_ntCOA4F/preview' },
-  { id: 'a005', name: '유봉기', department: '경비', deptGroup: '경비', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1X26nXzvw1mLiel95NpSu1P6MaIPkzgE0/preview' },
-  { id: 'a006', name: '박종민', department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/11qQLDGe2IV8nb9n3xcULiAjsl8TL0K8x/preview' },
-  { id: 'a007', name: '주상빈', department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1bOWhbdkfS5dRD-SgX4hlhF4TV3zASwV9/preview' },
-  { id: 'a008', name: '황재영', department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1BDTW9jbHK9dHXVy_2iuI2mlOMhjOHIw9/preview' },
+  { id: 'a001', num: 'SYU-001', name: '전희영',  department: '국제처',    deptGroup: '국제처',    jobType: 'office', bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/1EL9ytIk7Bq4W7f6aQf2BfJ0EY10YPMIT/preview' },
+  { id: 'a002', num: 'SYU-002', name: '채예진',  department: '국제처',    deptGroup: '국제처',    jobType: 'office', bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/1wNw6RZQKmuTl4XjtbMx3OtHl6SUUmn27/preview' },
+  { id: 'a003', num: 'SYU-003', name: '김정규',  department: '경비',      deptGroup: '경비',      jobType: 'labor',  bohun: 'yes', driveUrl: 'https://drive.google.com/file/d/1Fj41n_56T5vNr09hiK6TV9bE8QAqvPh2/preview' },
+  { id: 'a004', num: 'SYU-004', name: '양해문',  department: '경비',      deptGroup: '경비',      jobType: 'labor',  bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/1ux9BQcVqPjOmEZNNsptrNViO_ntCOA4F/preview' },
+  { id: 'a005', num: 'SYU-005', name: '유봉기',  department: '경비',      deptGroup: '경비',      jobType: 'labor',  bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/1X26nXzvw1mLiel95NpSu1P6MaIPkzgE0/preview' },
+  { id: 'a006', num: 'SYU-006', name: '박종민',  department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/11qQLDGe2IV8nb9n3xcULiAjsl8TL0K8x/preview' },
+  { id: 'a007', num: 'SYU-007', name: '주상빈',  department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/1bOWhbdkfS5dRD-SgX4hlhF4TV3zASwV9/preview' },
+  { id: 'a008', num: 'SYU-008', name: '황재영',  department: '리더십센터', deptGroup: '리더십센터', jobType: 'office', bohun: 'no',  driveUrl: 'https://drive.google.com/file/d/1BDTW9jbHK9dHXVy_2iuI2mlOMhjOHIw9/preview' },
 ];
 
 let currentUser = null; // 로그인한 평가위원
@@ -1194,7 +1194,7 @@ function renderApplicantList() {
     return `
     <div class="applicant-card ${evaluated ? 'evaluated' : ''} ${currentApplicantId === a.id ? 'active' : ''}"
          onclick="selectApplicant('${a.id}')" id="card_${a.id}">
-      <div class="applicant-name">${a.name}</div>
+      <div class="applicant-name">${a.num ? a.num + '. ' : ''}${a.name}</div>
       <div class="applicant-meta">${a.department || '-'}</div>
       <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
         <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
@@ -1234,7 +1234,7 @@ function selectApplicant(id) {
   document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서`;
 
   // 평가 패널
-  document.getElementById('evalPanelName').textContent = a.name;
+  document.getElementById('evalPanelName').textContent = (a.num ? a.num + '. ' : '') + a.name;
   document.getElementById('evalPanelSub').textContent = `${a.department || ''} · ${JOB_LABELS[a.jobType]}${a.bohun === 'yes' ? ' · 보훈대상자' : ''}`;
   document.getElementById('evalFooter').style.display = 'flex';
 
