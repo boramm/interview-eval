@@ -2141,6 +2141,7 @@ function generateSignaturePrint(evaluatorName, deptFilter) {
   // 평가위원별 그룹핑
   const evalsByEvaluator = {};
   appData.evaluations.forEach(ev => {
+    if (!ev.submitted) return; // 최종제출만 출력
     const a = appData.applicants.find(x => x.id === ev.applicantId);
     if (!a || a.absent) return;
     const dept = a.deptGroup || a.department || '기타';
