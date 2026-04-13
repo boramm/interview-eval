@@ -633,7 +633,7 @@
   <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:32px 36px;width:340px">
     <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:20px;letter-spacing:1px">사번으로 로그인</div>
     <div style="margin-bottom:14px">
-      <input id="loginId" type="text" placeholder="사번 입력 (예: 000163)"
+      <input id="loginId" type="text" placeholder="사번 입력 (예: 005923)"
         style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);
         background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;text-align:center;letter-spacing:4px"
         onkeydown="if(event.key==='Enter')doLogin()">
@@ -944,6 +944,7 @@ function doGet(e) {
 // 평가위원 계정 (사번 = 아이디 & 비밀번호)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const EVALUATORS = [
+  { id: '005923', name: '이보람', title: '총무인사팀', scope: 'all' },
   { id: '000163', name: '김성완', title: '사무처장', scope: 'all' },
   { id: '000206', name: '김현호', title: '총무인사팀장', scope: 'all' },
   { id: '000218', name: '최경천', title: '교목처장', scope: 'all' },
