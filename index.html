@@ -2017,6 +2017,7 @@ function printSignature() {
 
   // 부서별 결과 계산
   let sections = '';
+  let sections_map = {};
   Object.entries(deptGroups).forEach(([dept, applicants]) => {
     const ranked = applicants.map(a => {
       const evals = appData.evaluations.filter(e => e.applicantId === a.id);
@@ -2063,7 +2064,8 @@ function printSignature() {
         <div style="font-size:10px;color:#9ca3af;margin-top:4px">(서명)</div>
       </div>`).join('');
 
-    sections += `
+    if (!sections_map) var sections_map = {};
+    sections_map[dept] = `
       <div style="border:1.5px solid #1a2744;border-radius:8px;overflow:hidden;margin-bottom:28px;page-break-inside:avoid">
         <!-- 부서 헤더 -->
         <div style="background:#1a2744;padding:10px 16px;display:flex;justify-content:space-between;align-items:center">
@@ -2102,8 +2104,26 @@ function printSignature() {
       </div>`;
   });
 
-  // 팝업 창으로 출력
-  const win = window.open('', '_blank', 'width=800,height:1000');
+  // 부서 목록
+  const deptList = Object.keys(deptGroups);
+
+  // 탭 HTML
+  const tabButtons = deptList.map((dept, i) =>
+    `<button onclick="showDept('${dept}')" id="tab_${i}"
+      style="padding:8px 18px;border:none;border-radius:6px 6px 0 0;cursor:pointer;font-size:13px;font-weight:600;font-family:'Noto Sans KR',sans-serif;
+      background:${i===0?'#1a2744':'#e5e7eb'};color:${i===0?'white':'#374151'};margin-right:4px;transition:all 0.15s"
+      onmouseover="if(this.style.background!='rgb(26, 39, 68)')this.style.background='#d1d5db'"
+      onmouseout="if(this.style.background!='rgb(26, 39, 68)')this.style.background='#e5e7eb'">
+      ${dept}
+    </button>`
+  ).join('');
+
+  // 부서별 섹션 HTML (처음엔 첫 번째만 표시)
+  const sectionDivs = deptList.map((dept, i) =>
+    `<div id="section_${i}" style="display:${i===0?'block':'none'}">${sections_map[dept]}</div>`
+  ).join('');
+
+  const win = window.open('', '_blank', 'width=860,height=1100');
   win.document.write(`
     <!DOCTYPE html>
     <html lang="ko">
@@ -2113,37 +2133,66 @@ function printSignature() {
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Noto Sans KR', sans-serif; padding: 30px; background: white; }
+        body { font-family: 'Noto Sans KR', sans-serif; padding: 28px; background: #f8f6f0; }
+        .card { background: white; border-radius: 10px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         @media print {
           @page { size: A4 portrait; margin: 15mm; }
-          body { padding: 0; }
-          .no-print { display: none; }
+          body { padding: 0; background: white; }
+          .no-print { display: none !important; }
+          .card { box-shadow: none; padding: 0; }
         }
       </style>
     </head>
     <body>
-      <!-- 인쇄 버튼 -->
-      <div class="no-print" style="text-align:right;margin-bottom:16px">
-        <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:10px 20px;border-radius:6px;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">🖨️ 인쇄 / PDF 저장</button>
-      </div>
-
-      <!-- 문서 헤더 -->
-      <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1a2744">
-        <div style="font-family:'Noto Serif KR',serif;font-size:11px;color:#9ca3af;margin-bottom:4px">삼육대학교</div>
-        <div style="font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:#1a2744;margin-bottom:4px">
-          면접 선발결과 확인서명서
+      <!-- 컨트롤 바 -->
+      <div class="no-print" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          ${tabButtons}
         </div>
-        <div style="font-size:12px;color:#6b7280">${title}</div>
-        <div style="font-size:11px;color:#9ca3af;margin-top:4px">작성일: ${today}</div>
+        <button onclick="window.print()"
+          style="background:#1a2744;color:white;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
+          🖨️ 현재 부서 인쇄 / PDF
+        </button>
       </div>
 
-      <!-- 부서별 결과 -->
-      ${sections}
+      <div class="card">
+        <!-- 문서 헤더 -->
+        <div style="text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #1a2744">
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:3px">삼육대학교</div>
+          <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#1a2744;margin-bottom:3px">
+            면접 선발결과 확인서명서
+          </div>
+          <div style="font-size:12px;color:#6b7280">${title}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:3px">작성일: ${today}</div>
+        </div>
+
+        <!-- 부서별 섹션 -->
+        ${sectionDivs}
+      </div>
 
       <!-- 하단 -->
-      <div style="text-align:center;font-size:10px;color:#9ca3af;margin-top:20px;padding-top:12px;border-top:1px solid #e5e7eb">
-        본 문서는 삼육대학교 계약직원 채용 면접 평가 시스템에서 자동 생성되었습니다.
+      <div class="no-print" style="text-align:center;font-size:10px;color:#9ca3af;margin-top:12px">
+        삼육대학교 계약직원 채용 면접 평가 시스템
       </div>
+
+      <script>
+        function showDept(dept) {
+          const depts = ${JSON.stringify(deptList)};
+          depts.forEach((d, i) => {
+            const section = document.getElementById('section_' + i);
+            const tab = document.getElementById('tab_' + i);
+            if (d === dept) {
+              section.style.display = 'block';
+              tab.style.background = '#1a2744';
+              tab.style.color = 'white';
+            } else {
+              section.style.display = 'none';
+              tab.style.background = '#e5e7eb';
+              tab.style.color = '#374151';
+            }
+          });
+        }
+      <\/script>
     </body>
     </html>
   `);
