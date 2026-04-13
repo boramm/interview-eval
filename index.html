@@ -1308,10 +1308,17 @@ function renderEvalForm(a) {
     ? appData.evaluations.filter(e => e.applicantId === a.id && e.evaluatorName === currentUser.name).slice(-1)[0]
     : null;
   const isSubmitted = myPrevEval?.submitted;
-  const disabledAttr = isSubmitted ? 'disabled style="background:var(--gray-100);color:var(--gray-400)"' : '';
+  // 저장된 점수 복원
+  const savedScores = myPrevEval ? myPrevEval.scores : {};
+  const savedGrade = myPrevEval ? myPrevEval.grade : '';
+  const savedComment = myPrevEval ? myPrevEval.comment : '';
+  const savedDate = myPrevEval ? myPrevEval.evalDate : new Date().toISOString().slice(0,10);
+  const savedBohunPoint = myPrevEval ? myPrevEval.bohunPoint : 0;
+  const savedBohunChecked = savedBohunPoint > 0;
 
   const html = `
     ${isSubmitted ? '<div style="background:#d1fae5;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:4px">✅ 최종 제출 완료 — 수정이 불가능합니다</div>' : ''}
+    ${myPrevEval && !isSubmitted ? '<div style="background:#fef3c7;border-radius:8px;padding:8px 14px;font-size:12px;color:#92400e;margin-bottom:4px">📝 임시저장된 평가가 있습니다. 이어서 작성하세요.</div>' : ''}
     <div class="eval-section">
       <div class="eval-section-title">평가 기본 정보</div>
       <div class="eval-meta-grid">
@@ -1321,7 +1328,7 @@ function renderEvalForm(a) {
         </div>
         <div class="eval-field">
           <label>평가 일자 *</label>
-          <input type="date" id="ef_evalDate" value="${today}">
+          <input type="date" id="ef_evalDate" value="${savedDate}">
         </div>
         <div class="eval-field" style="grid-column:span 2">
           <label>지원부서</label>
@@ -1340,11 +1347,11 @@ function renderEvalForm(a) {
           </div>
           <div class="score-slider-row">
             <input type="range" class="score-slider" id="slider_${item.key}"
-              min="0" max="${item.max}" value="0"
-              oninput="syncScore('${item.key}', this.value)">
+              min="0" max="${item.max}" value="${savedScores[item.key] || 0}"
+              oninput="syncScore('${item.key}', this.value)" ${isSubmitted ? 'disabled' : ''}>
             <input type="number" class="score-input" id="input_${item.key}"
-              min="0" max="${item.max}" value="0"
-              oninput="syncSlider('${item.key}', this.value)">
+              min="0" max="${item.max}" value="${savedScores[item.key] || 0}"
+              oninput="syncSlider('${item.key}', this.value)" ${isSubmitted ? 'disabled' : ''}>
           </div>
         </div>
       `).join('')}
@@ -1359,18 +1366,13 @@ function renderEvalForm(a) {
       ${a.bohun === 'yes' ? `
       <div class="bohun-box">
         <div class="bohun-check">
-          <input type="checkbox" id="bohunCheck" onchange="calcTotal()">
+          <input type="checkbox" id="bohunCheck" ${savedBohunChecked ? 'checked' : ''} onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
           <label for="bohunCheck">보훈 가점 적용</label>
         </div>
         <div class="bohun-score-wrap">
           <label>가점</label>
-          <select id="bohunPoints" onchange="calcTotal()">
-            <option value="5">5점</option>
-            <option value="6">6점</option>
-            <option value="7">7점</option>
-            <option value="8">8점</option>
-            <option value="9">9점</option>
-            <option value="10">10점</option>
+          <select id="bohunPoints" onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
+            ${[5,6,7,8,9,10].map(v => `<option value="${v}" ${savedBohunPoint === v ? 'selected' : ''}>${v}점</option>`).join('')}
           </select>
         </div>
       </div>` : ''}
@@ -1387,20 +1389,20 @@ function renderEvalForm(a) {
     <div class="eval-section">
       <div class="eval-section-title">종합 평가 등급</div>
       <div class="grade-select">
-        <select id="ef_grade">
+        <select id="ef_grade" ${isSubmitted ? 'disabled' : ''}>
           <option value="">— 선택 —</option>
-          <option value="1">① 꼭 채용하고 싶다</option>
-          <option value="2">② 채용하고 싶다</option>
-          <option value="3">③ 잘 모르겠다</option>
-          <option value="4">④ 채용하고 싶지 않다</option>
-          <option value="5">⑤ 절대로 채용해서는 안 된다</option>
+          <option value="1" ${savedGrade==='1'?'selected':''}>① 꼭 채용하고 싶다</option>
+          <option value="2" ${savedGrade==='2'?'selected':''}>② 채용하고 싶다</option>
+          <option value="3" ${savedGrade==='3'?'selected':''}>③ 잘 모르겠다</option>
+          <option value="4" ${savedGrade==='4'?'selected':''}>④ 채용하고 싶지 않다</option>
+          <option value="5" ${savedGrade==='5'?'selected':''}>⑤ 절대로 채용해서는 안 된다</option>
         </select>
       </div>
     </div>
 
     <div class="eval-section">
       <div class="eval-section-title">종합 의견</div>
-      <textarea class="comment-area" id="ef_comment" placeholder="면접 종합 의견을 자유롭게 입력하세요..."></textarea>
+      <textarea class="comment-area" id="ef_comment" placeholder="면접 종합 의견을 자유롭게 입력하세요..." ${isSubmitted ? 'disabled' : ''}>${savedComment}</textarea>
     </div>
   `;
 
