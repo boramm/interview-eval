@@ -877,12 +877,9 @@ function doGet(e) {
         </select>
       </div>
       <div class="modal-field">
-        <label>자기소개서 PDF (선택)</label>
-        <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('mPdfFile').click()">
-          <span style="font-size:24px">📄</span>
-          <span class="file-upload-label" id="uploadLabel">클릭하여 PDF 파일 선택</span>
-        </div>
-        <input type="file" id="mPdfFile" accept=".pdf" style="display:none" onchange="handlePdfSelect(event)">
+        <label>자기소개서 Google Drive 링크 (선택)</label>
+        <input type="text" id="mDriveUrl" placeholder="https://drive.google.com/file/d/.../view">
+        <div style="font-size:11px;color:var(--gray-400);margin-top:4px">Drive에서 파일 우클릭 → 공유 → 링크 복사 후 붙여넣기</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -901,9 +898,18 @@ function doGet(e) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let appData = {
   projectTitle: '2026년 5월 1일부 계약직원 채용 면접평가',
-  applicants: [],
-  evaluations: [],   // { id, applicantId, evaluatorName, evalDate, scores, bohunPoint, grade, comment }
-  remarks: {}        // { applicantId: '비고내용' }
+  applicants: [
+    { id: 'a001', name: '전희영', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1EL9ytIk7Bq4W7f6aQf2BfJ0EY10YPMIT/preview' },
+    { id: 'a002', name: '채예진', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1wNw6RZQKmuTl4XjtbMx3OtHl6SUUmn27/preview' },
+    { id: 'a003', name: '김정규', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1Fj41n_56T5vNr09hiK6TV9bE8QAqvPh2/preview' },
+    { id: 'a004', name: '양해문', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1ux9BQcVqPjOmEZNNsptrNViO_ntCOA4F/preview' },
+    { id: 'a005', name: '유봉기', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1X26nXzvw1mLiel95NpSu1P6MaIPkzgE0/preview' },
+    { id: 'a006', name: '박종민', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/11qQLDGe2IV8nb9n3xcULiAjsl8TL0K8x/preview' },
+    { id: 'a007', name: '주상빈', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1bOWhbdkfS5dRD-SgX4hlhF4TV3zASwV9/preview' },
+    { id: 'a008', name: '황재영', department: '', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1BDTW9jbHK9dHXVy_2iuI2mlOMhjOHIw9/preview' },
+  ],
+  evaluations: [],
+  remarks: {}
 };
 
 let currentApplicantId = null;
@@ -978,13 +984,14 @@ function loadFromStorage() {
   if (raw) {
     try {
       const loaded = JSON.parse(raw);
-      appData = {...appData, ...loaded};
-      // PDF 복원
-      appData.applicants = appData.applicants.map(a => {
-        const pdf = localStorage.getItem('pdf_' + a.id);
-        if (pdf) a.pdfData = pdf;
-        return a;
-      });
+      // 평가/비고는 항상 불러오기
+      if (loaded.evaluations) appData.evaluations = loaded.evaluations;
+      if (loaded.remarks) appData.remarks = loaded.remarks;
+      if (loaded.projectTitle) appData.projectTitle = loaded.projectTitle;
+      // 지원자는 localStorage에 있으면 사용, 없으면 기본 데이터 유지
+      if (loaded.applicants && loaded.applicants.length > 0) {
+        appData.applicants = loaded.applicants;
+      }
     } catch(e) { console.error('로드 오류', e); }
   }
 }
@@ -1054,11 +1061,18 @@ function selectApplicant(id) {
   const a = appData.applicants.find(x => x.id === id);
   if (!a) return;
 
-  // PDF — 선택 시 placeholder 표시 (파일은 매번 직접 업로드)
-  document.getElementById('pdfPlaceholder').style.display = 'flex';
-  document.getElementById('pdfViewer').style.display = 'none';
-  document.getElementById('pdfViewer').src = '';
-  document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서 (PDF 교체 버튼으로 업로드)`;
+  // PDF — Drive 링크 있으면 바로 표시
+  const viewer = document.getElementById('pdfViewer');
+  if (a.driveUrl) {
+    document.getElementById('pdfPlaceholder').style.display = 'none';
+    viewer.style.display = 'block';
+    viewer.src = a.driveUrl;
+  } else {
+    document.getElementById('pdfPlaceholder').style.display = 'flex';
+    viewer.style.display = 'none';
+    viewer.src = '';
+  }
+  document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서`;
 
   // 평가 패널
   document.getElementById('evalPanelName').textContent = a.name;
@@ -1414,13 +1428,7 @@ function openEditModal(id) {
   document.getElementById('mDept').value = a.department || '';
   document.getElementById('mJobType').value = a.jobType;
   document.getElementById('mBohun').value = a.bohun;
-  if (a.pdfData) {
-    document.getElementById('uploadLabel').textContent = 'PDF 등록됨 (클릭하여 교체)';
-    document.getElementById('uploadArea').classList.add('has-file');
-  } else {
-    document.getElementById('uploadLabel').textContent = '클릭하여 PDF 파일 선택';
-    document.getElementById('uploadArea').classList.remove('has-file');
-  }
+  document.getElementById('mDriveUrl').value = a.driveUrl ? a.driveUrl.replace('/preview', '/view') : '';
   document.getElementById('applicantModal').classList.add('open');
 }
 
@@ -1447,16 +1455,20 @@ function saveApplicant() {
 
   if (!name) { showToast('성명을 입력해주세요', 'error'); return; }
 
+  const rawUrl = document.getElementById('mDriveUrl')?.value?.trim() || '';
+  // /view → /preview 로 변환 (iframe 표시용)
+  const driveUrl = rawUrl ? rawUrl.replace('/view', '/preview').replace('?usp=drive_link','').replace('?usp=sharing','') : '';
+
   if (editingId) {
     const idx = appData.applicants.findIndex(x => x.id === editingId);
     if (idx >= 0) {
       appData.applicants[idx] = { ...appData.applicants[idx], name, department: dept, jobType, bohun };
-      if (pendingPdfData) appData.applicants[idx].pdfData = pendingPdfData;
+      if (driveUrl) appData.applicants[idx].driveUrl = driveUrl;
     }
     showToast('정보가 수정되었습니다');
   } else {
     const newId = Date.now().toString();
-    appData.applicants.push({ id: newId, name, department: dept, jobType, bohun, pdfData: pendingPdfData || null });
+    appData.applicants.push({ id: newId, name, department: dept, jobType, bohun, driveUrl: driveUrl || null });
     showToast('지원자가 등록되었습니다', 'success');
   }
 
