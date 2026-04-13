@@ -788,6 +788,7 @@
         <div class="dashboard-title" id="dashTitle">면접 평가 결과 대시보드</div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 백업</button>
+          <button class="btn btn-outline btn-sm" id="syncBtn" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe" onclick="syncFromSheets()">🔄 Sheets 동기화</button>
           <button class="btn btn-gold btn-sm" onclick="printSignature()">📝 선발결과 확인서명서</button>
           <button class="btn btn-navy btn-sm" onclick="window.print()">🖨️ 결과 인쇄</button>
         </div>
@@ -1983,6 +1984,93 @@ function toggleAbsence(id, isAbsent) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 선발결과 확인서명서 출력
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Sheets 동기화 (관리자용)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function syncFromSheets() {
+  const gasUrl = localStorage.getItem('gasUrl');
+  if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
+
+  const btn = document.getElementById('syncBtn');
+  btn.textContent = '🔄 동기화 중...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(gasUrl);
+    const data = await res.json();
+
+    if (data.status !== 'ok' || !data.rows) {
+      showToast('데이터를 불러오지 못했습니다', 'error');
+      btn.textContent = '🔄 Sheets 동기화';
+      btn.disabled = false;
+      return;
+    }
+
+    const rows = data.rows;
+    if (rows.length <= 1) {
+      showToast('Sheets에 평가 데이터가 없습니다', 'error');
+      btn.textContent = '🔄 Sheets 동기화';
+      btn.disabled = false;
+      return;
+    }
+
+    // 헤더 제외하고 데이터 파싱
+    const newEvals = [];
+    rows.slice(1).forEach(row => {
+      if (!row[5]) return; // evaluatorName 없으면 스킵
+      const evaluatorName = String(row[5]);
+      const applicantName = String(row[2]);
+      const evalDate = row[6] ? String(row[6]).slice(0,10) : '';
+      // 지원자 찾기
+      const applicant = appData.applicants.find(a => a.name === applicantName);
+      if (!applicant) return;
+
+      // 중복 체크 (같은 평가위원 + 같은 지원자 + 같은 날짜)
+      const exists = appData.evaluations.find(e =>
+        e.evaluatorName === evaluatorName &&
+        e.applicantId === applicant.id &&
+        e.evalDate === evalDate
+      );
+      if (exists) return;
+
+      newEvals.push({
+        id: Date.now().toString() + Math.random(),
+        applicantId: applicant.id,
+        evaluatorName,
+        evalDate,
+        scores: {
+          s1: Number(row[7])||0,
+          s2: Number(row[8])||0,
+          s3: Number(row[9])||0,
+          s4: Number(row[10])||0,
+          s5: Number(row[11])||0,
+        },
+        subTotal: Number(row[12])||0,
+        bohunPoint: Number(row[13])||0,
+        finalScore: Number(row[14])||0,
+        grade: String(row[15]||''),
+        comment: String(row[16]||''),
+        submitted: true,
+        syncedFromSheets: true
+      });
+    });
+
+    if (newEvals.length === 0) {
+      showToast('새로운 평가 데이터가 없습니다 (이미 동기화됨)', 'success');
+    } else {
+      appData.evaluations = [...appData.evaluations, ...newEvals];
+      saveToStorage();
+      updateDashboard();
+      showToast(`✅ ${newEvals.length}건 동기화 완료!`, 'success');
+    }
+  } catch(e) {
+    showToast('동기화 실패: ' + e.message, 'error');
+  }
+
+  btn.textContent = '🔄 Sheets 동기화';
+  btn.disabled = false;
+}
+
 function printSignature() {
   if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
 
