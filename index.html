@@ -2072,33 +2072,18 @@ async function syncFromSheets() {
 
 function printSignature() {
   if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
-
   const isAdmin = currentUser.id === '005923';
-
   if (isAdmin) {
-    // 관리자 → 선택 모달 표시
     openSignatureModal();
   } else {
-    // 일반 평가위원 → 본인 결과 바로 출력
     generateSignaturePrint(currentUser.name);
   }
 }
 
-// ─── 관리자용 선택 모달 ───
 function openSignatureModal() {
-  // 평가자 목록 수집
   const evaluatorNames = [...new Set(appData.evaluations.map(e => e.evaluatorName))];
-  const deptList = [...new Set(appData.applicants.map(a => a.deptGroup || a.department))].filter(Boolean);
-
-  const evalOptions = evaluatorNames.map(n =>
-    `<option value="${n}">${n}</option>`
-  ).join('');
-
-  const deptOptions = ['전체', ...deptList].map(d =>
-    `<option value="${d}">${d}</option>`
-  ).join('');
-
-  // 모달 동적 생성
+  if (evaluatorNames.length === 0) { showToast('평가 데이터가 없습니다', 'error'); return; }
+  const evalOptions = evaluatorNames.map(n => `<option value="${n}">${n}</option>`).join('');
   let modal = document.getElementById('sigSelectModal');
   if (!modal) {
     modal = document.createElement('div');
@@ -2107,186 +2092,181 @@ function openSignatureModal() {
     document.body.appendChild(modal);
   }
   modal.innerHTML = `
-    <div class="modal" style="max-width:380px">
+    <div class="modal" style="max-width:360px">
       <div class="modal-header">
         <span class="modal-title">📝 서명서 출력 설정</span>
         <button class="modal-close" onclick="document.getElementById('sigSelectModal').classList.remove('open')">×</button>
       </div>
-      <div class="modal-body" style="gap:16px">
+      <div class="modal-body" style="gap:14px">
         <div class="modal-field">
           <label>평가위원 선택</label>
           <select id="sigEvaluator" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:14px;font-family:'Noto Sans KR',sans-serif">
             ${evalOptions}
           </select>
         </div>
-        <div class="modal-field">
-          <label>부서 필터</label>
-          <select id="sigDept" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:14px;font-family:'Noto Sans KR',sans-serif">
-            ${deptOptions}
-          </select>
-        </div>
         <div style="font-size:12px;color:var(--gray-500);background:var(--gray-50);border-radius:6px;padding:10px">
-          선택한 평가위원이 평가한 결과와 해당 평가위원의 서명란만 출력됩니다.
+          선택한 평가위원이 부서별로 평가한 점수 확인서가 출력됩니다.
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline btn-sm" style="color:var(--gray-600)" onclick="document.getElementById('sigSelectModal').classList.remove('open')">취소</button>
         <button class="btn btn-gold" onclick="
           const name = document.getElementById('sigEvaluator').value;
-          const dept = document.getElementById('sigDept').value;
           document.getElementById('sigSelectModal').classList.remove('open');
-          generateSignaturePrint(name, dept === '전체' ? null : dept);
+          generateSignaturePrint(name);
         ">출력하기</button>
       </div>
     </div>`;
   modal.classList.add('open');
 }
 
-// ─── 실제 서명서 생성 ───
-function generateSignaturePrint(evaluatorName, deptFilter) {
-  const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'});
+function generateSignaturePrint(evaluatorName) {
+  const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g,'.').replace('.','년 ').replace('.','월 ').replace('.','일');
   const title = appData.projectTitle;
+  const evalInfo = EVALUATORS.find(e => e.name === evaluatorName);
+  const evalTitle = evalInfo ? evalInfo.title : '';
 
-  // 해당 평가위원의 평가만 필터링
+  // 해당 평가위원의 평가만
   const myEvals = appData.evaluations.filter(e => e.evaluatorName === evaluatorName);
-  if (myEvals.length === 0) { showToast('해당 평가위원의 평가 데이터가 없습니다', 'error'); return; }
+  if (myEvals.length === 0) { showToast('평가 데이터가 없습니다', 'error'); return; }
 
   // 부서별 그룹핑
   const deptGroups = {};
   myEvals.forEach(ev => {
     const a = appData.applicants.find(x => x.id === ev.applicantId);
-    if (!a || a.absent) return;
-    const dept = a.deptGroup || a.department || '기타';
-    if (deptFilter && dept !== deptFilter) return;
+    if (!a) return;
+    const dept = a.department || '기타';
     if (!deptGroups[dept]) deptGroups[dept] = [];
     if (!deptGroups[dept].find(x => x.applicantId === ev.applicantId)) {
-      deptGroups[dept].push({...ev, applicant: a});
+      deptGroups[dept].push({ev, applicant: a});
     }
   });
 
   const deptList = Object.keys(deptGroups);
-  if (deptList.length === 0) { showToast('출력할 데이터가 없습니다', 'error'); return; }
+  const gradeMap = {'1':'① 꼭 채용하고 싶다','2':'② 채용하고 싶다','3':'③ 잘 모르겠다','4':'④ 채용하고 싶지 않다','5':'⑤ 절대로 채용해서는 안된다'};
+  const ITEM_NAMES = ['대학 직원으로서의 자세(20점)','전문지식과 그 응용능력(20점)','의사 표현의 정확성과 논리성(20점)','예의·품행 및 성실성(20점)','창의력·의지력 및 발전 가능성(20점)'];
 
-  // 부서별 섹션 HTML
-  function buildSection(dept) {
-    const items = deptGroups[dept].sort((a,b) => b.finalScore - a.finalScore);
-    const winner = items[0];
+  // 부서별 테이블 생성
+  function buildTable(dept) {
+    const items = deptGroups[dept];
+    // 지원자 컬럼 (최대 6명)
+    const applicantCols = items.map(({applicant}) =>
+      `<th style="padding:8px;border:1px solid #ccc;text-align:center;min-width:70px;background:#f5f5f5;font-size:12px">${applicant.name}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}</th>`
+    ).join('');
 
-    const rows = items.map((ev, i) => {
-      const a = ev.applicant;
-      const rank = i + 1;
-      const gradeMap = {'1':'① 꼭 채용','2':'② 채용','3':'③ 모르겠다','4':'④ 채용 안함','5':'⑤ 절대 안됨'};
-      return `<tr style="${rank===1?'background:#fefce8':''}">
-        <td style="text-align:center;padding:8px 10px;border:1px solid #ddd;font-weight:700">${rank===1?'🥇':rank===2?'🥈':rank}</td>
-        <td style="padding:8px 10px;border:1px solid #ddd;font-size:11px;color:#666">${a.num||''}</td>
-        <td style="padding:8px 10px;border:1px solid #ddd;font-weight:600">${a.name}</td>
-        <td style="text-align:center;padding:8px 10px;border:1px solid #ddd">${a.bohun==='yes'?'<span style="background:#fce7f3;color:#9d174d;padding:1px 5px;border-radius:3px;font-size:10px">보훈</span>':''}</td>
-        <td style="text-align:center;padding:8px 10px;border:1px solid #ddd">${ev.subTotal}점</td>
-        <td style="text-align:center;padding:8px 10px;border:1px solid #ddd">${ev.bohunPoint>0?'<span style="color:#16a34a;font-weight:600">+'+ev.bohunPoint+'점</span>':'—'}</td>
-        <td style="text-align:center;padding:8px 10px;border:1px solid #ddd;font-weight:700;color:#1a2744;font-size:14px">${ev.finalScore}점</td>
-        <td style="padding:8px 10px;border:1px solid #ddd;font-size:11px;color:#555">${gradeMap[ev.grade]||''}</td>
+    // 항목별 점수 행
+    const scoreRows = ITEM_NAMES.map((name, idx) => {
+      const scoreKey = 's' + (idx+1);
+      const scoreCells = items.map(({ev}) =>
+        `<td style="padding:8px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[scoreKey] || 0}</td>`
+      ).join('');
+      return `<tr>
+        <td style="padding:8px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa">${name}</td>
+        ${scoreCells}
       </tr>`;
     }).join('');
 
-    // 서명란 — 평가위원 본인만
-    const evalInfo = EVALUATORS.find(e => e.name === evaluatorName);
-    const evalTitle = evalInfo ? evalInfo.title : '';
+    // 합계 행
+    const totalCells = items.map(({ev}) =>
+      `<td style="padding:8px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:14px;color:#1a2744">${ev.subTotal}</td>`
+    ).join('');
+
+    // 보훈 가점 행 (해당 있는 경우만)
+    const hasBohun = items.some(({applicant}) => applicant.bohun === 'yes');
+    const bohunRow = hasBohun ? `<tr>
+      <td style="padding:8px 12px;border:1px solid #ccc;font-size:12px;background:#fdf2f8;color:#9d174d;font-weight:600">보훈 가점</td>
+      ${items.map(({ev, applicant}) =>
+        `<td style="padding:8px;border:1px solid #ccc;text-align:center;font-size:13px;color:#9d174d">${applicant.bohun==='yes'&&ev.bohunPoint>0?'+'+ev.bohunPoint:'—'}</td>`
+      ).join('')}
+    </tr>` : '';
+
+    // 최종점수 행
+    const finalCells = items.map(({ev, applicant}) =>
+      `<td style="padding:8px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:15px;color:#1a2744;background:#fefce8">${ev.finalScore}</td>`
+    ).join('');
+
+    // 종합평가 행
+    const gradeCells = items.map(({ev}) =>
+      `<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;font-size:10px;color:#374151">${gradeMap[ev.grade]||''}</td>`
+    ).join('');
+
+    // 추천이유 행
+    const commentCells = items.map(({ev}) =>
+      `<td style="padding:8px;border:1px solid #ccc;font-size:11px;color:#555;vertical-align:top">${ev.comment||''}</td>`
+    ).join('');
 
     return `
-      <div style="border:1.5px solid #1a2744;border-radius:8px;overflow:hidden;margin-bottom:24px;page-break-inside:avoid">
-        <div style="background:#1a2744;padding:10px 16px;display:flex;justify-content:space-between;align-items:center">
-          <span style="color:#e8c97a;font-weight:700;font-size:14px">${dept} 면접 평가 결과</span>
-          <span style="color:rgba(255,255,255,0.7);font-size:12px">${evaluatorName} 평가위원</span>
+      <div style="margin-bottom:32px;page-break-inside:avoid">
+        <div style="background:#1a2744;color:#e8c97a;font-weight:700;font-size:13px;padding:8px 14px;border-radius:4px 4px 0 0">
+          지원부서: ${dept}
         </div>
-        <div style="padding:16px">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
-            <thead><tr style="background:#f3f4f6">
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">순위</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">가번호</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">성명</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">비고</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">점수</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">보훈</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">최종점수</th>
-              <th style="padding:8px 10px;border:1px solid #ddd;font-size:11px">종합의견</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-
-          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#166534;line-height:2">
-            위 <strong>${dept}</strong> 면접 결과를 확인하였으며,<br>
-            <strong style="font-size:14px">최종 선발자 "${winner.applicant.name}" (${winner.finalScore}점)</strong>에 동의하며 이에 서명합니다.
-          </div>
-
-          <div style="display:flex;align-items:center;gap:16px;padding:14px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
-            <div style="font-size:13px;color:#374151">
-              <div style="font-weight:700;font-size:14px">${evaluatorName}</div>
-              <div style="font-size:11px;color:#6b7280;margin-top:2px">${evalTitle}</div>
-            </div>
-            <div style="flex:1;text-align:center">
-              <div style="height:50px;border-bottom:1.5px solid #374151;margin:0 20px"></div>
-              <div style="font-size:10px;color:#9ca3af;margin-top:4px">(서명)</div>
-            </div>
-            <div style="font-size:11px;color:#6b7280;text-align:right">
-              <div>${today}</div>
-            </div>
-          </div>
-        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr>
+              <th style="padding:8px 12px;border:1px solid #ccc;text-align:center;background:#2d4a8a;color:white;font-size:12px;min-width:160px">평가항목</th>
+              ${applicantCols}
+            </tr>
+          </thead>
+          <tbody>
+            ${scoreRows}
+            <tr style="background:#e8f0fe">
+              <td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:12px;text-align:center">합계 (100점)</td>
+              ${totalCells}
+            </tr>
+            ${bohunRow}
+            <tr style="background:#fefce8">
+              <td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:12px;text-align:center">최종점수</td>
+              ${finalCells}
+            </tr>
+            <tr style="background:#f9f0ff">
+              <td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:12px;text-align:center;background:#f0f4ff">종합평가 작성란</td>
+              ${gradeCells}
+            </tr>
+            <tr>
+              <td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:12px;text-align:center;background:#fafafa">※ 추천이유 및 기타 소견</td>
+              ${commentCells}
+            </tr>
+          </tbody>
+        </table>
       </div>`;
   }
 
-  // 탭 버튼 (부서가 여러 개일 때만)
-  const tabButtons = deptList.length > 1 ? deptList.map((dept, i) =>
-    `<button id="stab_${i}" onclick="showDeptSection(${i})"
-      style="padding:8px 16px;border:none;border-radius:6px 6px 0 0;cursor:pointer;font-size:13px;font-weight:600;
-      font-family:'Noto Sans KR',sans-serif;background:${i===0?'#1a2744':'#e5e7eb'};color:${i===0?'white':'#374151'};margin-right:4px">
-      ${dept}</button>`
-  ).join('') : '';
+  const tableHTML = deptList.map(dept => buildTable(dept)).join('');
 
-  const sectionDivs = deptList.map((dept, i) =>
-    `<div id="ssec_${i}" style="display:${i===0?'block':'none'}">${buildSection(dept)}</div>`
-  ).join('');
-
-  const win = window.open('', '_blank', 'width=820,height=1100');
+  const win = window.open('', '_blank', 'width=860,height=1100');
   win.document.write(`<!DOCTYPE html>
 <html lang="ko"><head>
-<meta charset="UTF-8"><title>면접 선발결과 확인서명서</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"><title>계약직원 채용 면접평가표</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Noto Sans KR',sans-serif;padding:24px;background:#f8f6f0}
-  .card{background:white;border-radius:10px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+  body{font-family:'Noto Sans KR',sans-serif;padding:30px;background:white;color:#1f2937}
   @media print{
-    @page{size:A4 portrait;margin:15mm}
-    body{padding:0;background:white}
+    @page{size:A4 landscape;margin:12mm}
+    body{padding:0}
     .no-print{display:none!important}
-    .card{box-shadow:none;padding:0}
-    div[id^="ssec_"]{display:block!important}
   }
 </style>
 </head><body>
-<div class="no-print" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
-  <div>${tabButtons}</div>
+<div class="no-print" style="text-align:right;margin-bottom:16px">
   <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif">🖨️ 인쇄 / PDF</button>
 </div>
-<div class="card">
-  <div style="text-align:center;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #1a2744">
-    <div style="font-size:11px;color:#9ca3af;margin-bottom:3px">삼육대학교</div>
-    <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#1a2744;margin-bottom:3px">면접 선발결과 확인서명서</div>
-    <div style="font-size:12px;color:#6b7280">${title}</div>
-    <div style="font-size:11px;color:#9ca3af;margin-top:3px">평가위원: ${evaluatorName} | 작성일: ${today}</div>
-  </div>
-  ${sectionDivs}
+
+<div style="font-size:10px;color:#666;margin-bottom:6px">[별지 제2호 서식]</div>
+<div style="border-top:3px solid #e53e3e;border-bottom:3px solid #38a169;padding:10px 0;text-align:center;margin-bottom:20px">
+  <div style="font-size:20px;font-weight:700;letter-spacing:4px">계약직원 채용 면접평가표</div>
 </div>
-<script>
-function showDeptSection(idx) {
-  document.querySelectorAll('[id^="ssec_"]').forEach((el,i)=>{el.style.display=i===idx?'block':'none'});
-  document.querySelectorAll('[id^="stab_"]').forEach((el,i)=>{
-    el.style.background=i===idx?'#1a2744':'#e5e7eb';
-    el.style.color=i===idx?'white':'#374151';
-  });
-}
-<\/script>
+
+${tableHTML}
+
+<div style="text-align:center;font-size:13px;margin:24px 0 16px;color:#374151">
+  ${today}
+</div>
+<div style="text-align:right;font-size:14px;padding-right:40px">
+  면접위원 : <span style="font-weight:700">${evaluatorName}</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  (인)
+</div>
 </body></html>`);
   win.document.close();
 }
