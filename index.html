@@ -1014,11 +1014,11 @@ const EVAL_ITEMS = {
     { key: 's5', name: '창의력·의지력 및 발전가능성', max: 20 },
   ],
   research: [
-    { key: 's1', name: '전공 전문지식 수준', max: 20 },
-    { key: 's2', name: '연구 수행 능력 및 실적', max: 20 },
-    { key: 's3', name: '의사소통 및 논리적 표현', max: 20 },
-    { key: 's4', name: '협력 및 조직 기여도', max: 20 },
-    { key: 's5', name: '창의성 및 연구 발전가능성', max: 20 },
+    { key: 's1', name: '대학직원으로서의 자세', max: 20 },
+    { key: 's2', name: '전문지식과 그 응용능력', max: 20 },
+    { key: 's3', name: '의사 표현의 정확성과 논리성', max: 20 },
+    { key: 's4', name: '예의·품행 및 성실성', max: 20 },
+    { key: 's5', name: '창의력·의지력 및 발전가능성', max: 20 },
   ]
 };
 
@@ -1037,6 +1037,7 @@ function doLogin() {
     return;
   }
   currentUser = evaluator;
+  sessionStorage.setItem('currentUserId', evaluator.id);
   currentApplicantId = null;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('userName').textContent = evaluator.name;
@@ -1058,6 +1059,7 @@ function doLogin() {
 function doLogout() {
   if (!confirm('로그아웃 하시겠습니까?')) return;
   currentUser = null;
+  sessionStorage.removeItem('currentUserId');
   document.getElementById('loginId').value = '';
   document.getElementById('loginPw').value = '';
   document.getElementById('loginError').style.display = 'none';
@@ -1137,6 +1139,19 @@ function init() {
     appData.projectTitle = this.value;
     saveToStorage();
   });
+
+  // 새로고침 후 자동 로그인 복원
+  const savedId = sessionStorage.getItem('currentUserId');
+  if (savedId) {
+    const evaluator = EVALUATORS.find(e => e.id === savedId);
+    if (evaluator) {
+      currentUser = evaluator;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('userName').textContent = evaluator.name;
+      document.getElementById('userTitle').textContent = evaluator.title;
+      renderApplicantList();
+    }
+  }
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
