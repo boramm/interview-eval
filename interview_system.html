@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계약직원 면접 평가 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2744;
+    --navy-mid: #243560;
+    --navy-light: #2f4480;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f8f6f0;
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --red: #dc2626;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --shadow: 0 4px 24px rgba(26,39,68,0.10);
+    --shadow-lg: 0 8px 40px rgba(26,39,68,0.16);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--cream);
+    color: var(--gray-800);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── 상단 헤더 ─── */
+  .header {
+    background: var(--navy);
+    color: white;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 2px solid var(--gold);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-logo {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 1px;
+  }
+  .header-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+  .header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  #projectTitle {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    border: none;
+    background: transparent;
+    outline: none;
+    min-width: 300px;
+    cursor: pointer;
+  }
+  #projectTitle:focus {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: text;
+  }
+  .edit-icon { font-size: 12px; color: var(--gold); opacity: 0.7; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 6px; font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500; cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); }
+  .btn-outline:hover { background: rgba(255,255,255,0.1); }
+  .btn-navy { background: var(--navy-mid); color: white; }
+  .btn-navy:hover { background: var(--navy-light); }
+  .btn-red { background: #fee2e2; color: var(--red); border: 1px solid #fca5a5; }
+  .btn-red:hover { background: #fecaca; }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #15803d; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ─── 탭 ─── */
+  .tab-bar {
+    background: var(--navy-mid);
+    display: flex;
+    gap: 0;
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
+  .tab:hover:not(.active) { color: rgba(255,255,255,0.85); }
+
+  /* ─── 메인 영역 ─── */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ─── 사이드바 ─── */
+  .sidebar {
+    width: 240px;
+    background: var(--white);
+    border-right: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-title { font-size: 12px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+  .applicant-list { flex: 1; overflow-y: auto; padding: 8px; }
+
+  .applicant-card {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 4px;
+    border: 1.5px solid transparent;
+    position: relative;
+  }
+  .applicant-card:hover { background: var(--gray-50); }
+  .applicant-card.active { background: #eef2ff; border-color: var(--blue); }
+  .applicant-card.evaluated { border-left: 3px solid var(--green); }
+
+  .applicant-name { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+  .applicant-meta { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+  .applicant-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .badge-labor { background: #fef3c7; color: #92400e; }
+  .badge-office { background: #dbeafe; color: #1e40af; }
+  .badge-research { background: #d1fae5; color: #065f46; }
+  .badge-bohun { background: #fce7f3; color: #9d174d; margin-left: 4px; }
+
+  .card-actions {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    display: none; gap: 4px;
+  }
+  .applicant-card:hover .card-actions { display: flex; }
+  .icon-btn {
+    width: 24px; height: 24px; border-radius: 4px; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; transition: all 0.15s;
+  }
+  .icon-btn-edit { background: var(--gray-100); color: var(--gray-600); }
+  .icon-btn-edit:hover { background: #dbeafe; color: var(--blue); }
+  .icon-btn-del { background: var(--gray-100); color: var(--gray-600); }
+  .icon-btn-del:hover { background: #fee2e2; color: var(--red); }
+
+  .sidebar-footer { padding: 12px; border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 6px; }
+
+  /* ─── 콘텐츠 ─── */
+  .content { flex: 1; display: flex; overflow: hidden; }
+
+  /* 평가 탭 - 2분할 */
+  .eval-view { display: flex; width: 100%; }
+
+  .pdf-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--gray-200);
+    background: var(--gray-100);
+  }
+  .pdf-panel-header {
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pdf-panel-title { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+  .pdf-container { flex: 1; overflow: auto; display: flex; flex-direction: column; }
+  #pdfViewer { width: 100%; height: 100%; border: none; }
+  .pdf-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-400);
+    gap: 12px;
+  }
+  .pdf-placeholder svg { width: 48px; height: 48px; opacity: 0.5; }
+  .pdf-placeholder p { font-size: 14px; }
+
+  .eval-panel {
+    width: 420px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    overflow: hidden;
+  }
+  .eval-panel-header {
+    padding: 14px 20px;
+    background: var(--navy);
+    color: white;
+    flex-shrink: 0;
+  }
+  .eval-panel-title { font-size: 14px; font-weight: 700; }
+  .eval-panel-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .eval-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* 평가표 */
+  .eval-section { }
+  .eval-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .eval-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .eval-field label { display: block; font-size: 11px; font-weight: 600; color: var(--gray-500); margin-bottom: 4px; }
+  .eval-field input, .eval-field select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--gray-800);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .eval-field input:focus, .eval-field select:focus { border-color: var(--blue); }
+
+  .score-item {
+    background: var(--gray-50);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .score-item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .score-item-name { font-size: 13px; font-weight: 500; color: var(--gray-700); }
+  .score-item-max { font-size: 11px; color: var(--gray-400); }
+  .score-slider-row { display: flex; align-items: center; gap: 10px; }
+  .score-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gray-200);
+    outline: none;
+    cursor: pointer;
+  }
+  .score-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--navy);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .score-input {
+    width: 52px;
+    text-align: center;
+    padding: 4px;
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .total-box {
+    background: var(--navy);
+    color: white;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-label { font-size: 13px; font-weight: 600; }
+  .total-score { font-size: 28px; font-weight: 700; color: var(--gold-light); }
+  .total-score span { font-size: 14px; color: rgba(255,255,255,0.5); }
+
+  .bohun-box {
+    background: #fdf2f8;
+    border: 1px solid #f9a8d4;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .bohun-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .bohun-check input { width: 16px; height: 16px; cursor: pointer; }
+  .bohun-check label { font-size: 13px; font-weight: 600; color: #9d174d; cursor: pointer; }
+  .bohun-score-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .bohun-score-wrap label { font-size: 12px; color: var(--gray-600); }
+  .bohun-score-wrap select {
+    padding: 4px 8px;
+    border: 1px solid #f9a8d4;
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .grade-select select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    background: white;
+  }
+
+  .comment-area {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    resize: vertical;
+    min-height: 70px;
+    color: var(--gray-800);
+  }
+
+  .eval-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--gray-100);
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+  }
+
+  .save-btn {
+    flex: 1;
+    padding: 11px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--navy);
+    color: white;
+  }
+  .save-btn:hover { background: var(--navy-light); }
+  .save-btn.saved { background: var(--green); }
+
+  /* ─── 대시보드 ─── */
+  .dashboard-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .dashboard-view.active { display: flex; }
+
+  .dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dashboard-title { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700; color: var(--navy); }
+
+  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--navy);
+  }
+  .stat-card.green { border-left-color: var(--green); }
+  .stat-card.gold { border-left-color: var(--gold); }
+  .stat-card.red { border-left-color: var(--red); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--navy); margin-top: 4px; }
+
+  .result-table-wrap {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .result-table-header {
+    padding: 14px 20px;
+    background: var(--navy);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .result-table-title { font-size: 14px; font-weight: 700; }
+  .result-table { width: 100%; border-collapse: collapse; }
+  .result-table th {
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .result-table td {
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 13px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+  }
+  .result-table tr:hover td { background: var(--gray-50); }
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .rank-1 { background: var(--gold); color: var(--navy); }
+  .rank-2 { background: var(--gray-300); color: var(--gray-700); }
+  .rank-3 { background: #cd7f32; color: white; }
+  .rank-other { background: var(--gray-100); color: var(--gray-500); }
+  .remark-input {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Noto Sans KR', sans-serif;
+    text-align: left;
+  }
+
+  /* 인쇄 결과 상세 */
+  .eval-detail-list { display: flex; flex-direction: column; gap: 12px; }
+  .eval-detail-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .eval-detail-card-header {
+    padding: 10px 16px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eval-detail-name { font-weight: 700; font-size: 14px; }
+  .eval-detail-body { padding: 12px 16px; }
+  .eval-scores-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+  .eval-score-cell { text-align: center; }
+  .eval-score-cell-label { font-size: 10px; color: var(--gray-500); margin-bottom: 2px; }
+  .eval-score-cell-val { font-size: 16px; font-weight: 700; color: var(--navy); }
+
+  /* ─── 설정 탭 ─── */
+  .settings-view {
+    flex: 1; overflow-y: auto; padding: 24px;
+    display: none; flex-direction: column; gap: 20px;
+  }
+  .settings-view.active { display: flex; }
+  .settings-card {
+    background: white; border-radius: 10px; box-shadow: var(--shadow); padding: 20px;
+  }
+  .settings-card-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--gray-100); }
+  .settings-field { margin-bottom: 14px; }
+  .settings-field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+  .settings-field input {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--gray-200); border-radius: 6px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    color: var(--gray-800); outline: none;
+  }
+  .settings-field input:focus { border-color: var(--blue); }
+  .settings-help { font-size: 11px; color: var(--gray-400); margin-top: 4px; line-height: 1.5; }
+  .settings-status {
+    padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+    margin-top: 10px;
+  }
+  .status-ok { background: #d1fae5; color: #065f46; }
+  .status-warn { background: #fef3c7; color: #92400e; }
+  .status-err { background: #fee2e2; color: #991b1b; }
+
+  /* ─── 모달 ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    width: 440px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-400); line-height: 1; }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; }
+  .modal-field input, .modal-field select {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--gray-200); border-radius: 6px;
+    font-size: 14px; font-family: 'Noto Sans KR', sans-serif;
+    color: var(--gray-800); outline: none;
+  }
+  .modal-field input:focus, .modal-field select:focus { border-color: var(--blue); }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px; }
+
+  .file-upload-area {
+    border: 2px dashed var(--gray-300);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .file-upload-area:hover { border-color: var(--blue); background: #eff6ff; }
+  .file-upload-area.has-file { border-color: var(--green); background: #f0fdf4; }
+  .file-upload-label { font-size: 13px; color: var(--gray-500); display: block; margin-top: 6px; }
+
+  /* ─── 인쇄 스타일 ─── */
+  @media print {
+    body { height: auto; overflow: visible; background: white; }
+    .header, .tab-bar, .sidebar, .eval-view { display: none !important; }
+    .dashboard-view { display: block !important; overflow: visible; padding: 0; }
+    .dashboard-header .btn { display: none; }
+    .result-table input { border: none; }
+    .print-signature { margin-top: 40px; }
+  }
+
+  /* 상태 토스트 */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--gray-800); color: white;
+    padding: 12px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    transform: translateY(60px); opacity: 0;
+    transition: all 0.3s; z-index: 9999;
+    box-shadow: var(--shadow-lg);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--red); }
+
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--gray-400); gap: 10px;
+    padding: 40px;
+  }
+  .empty-state p { font-size: 14px; }
+
+  .no-select { display: none; }
+  .has-select { display: block; }
+</style>
+</head>
+<body>
+
+<!-- 상단 헤더 -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">삼육대학교</div>
+    <div class="header-divider"></div>
+    <div class="header-title-wrap">
+      <input type="text" id="projectTitle" value="2026년 5월 1일부 계약직원 채용 면접평가" title="클릭하여 제목 수정">
+      <span class="edit-icon">✏️</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-outline btn-sm" onclick="exportData()">📥 데이터 백업</button>
+    <button class="btn btn-gold btn-sm" onclick="showTab('dashboard')">📊 대시보드</button>
+  </div>
+</div>
+
+<!-- 탭 -->
+<div class="tab-bar">
+  <div class="tab active" id="tab-eval" onclick="showTab('eval')">📋 면접 평가</div>
+  <div class="tab" id="tab-dashboard" onclick="showTab('dashboard')">📊 결과 대시보드</div>
+  <div class="tab" id="tab-settings" onclick="showTab('settings')">⚙️ 저장 설정</div>
+</div>
+
+<!-- 메인 -->
+<div class="main">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">지원자 목록</span>
+      <span style="font-size:12px;color:var(--gray-400)" id="applicantCount">0명</span>
+    </div>
+    <div class="applicant-list" id="applicantList"></div>
+    <div class="sidebar-footer">
+      <button class="btn btn-navy" style="width:100%;justify-content:center" onclick="openAddModal()">+ 지원자 등록</button>
+    </div>
+  </div>
+
+  <!-- 평가 뷰 -->
+  <div class="content" id="mainContent">
+
+    <!-- 평가 탭 -->
+    <div class="eval-view" id="evalView">
+      <!-- PDF 패널 -->
+      <div class="pdf-panel">
+        <div class="pdf-panel-header">
+          <span class="pdf-panel-title" id="pdfPanelTitle">📄 자기소개서 / 이력서</span>
+          <label for="pdfFileInput" style="cursor:pointer">
+            <span class="btn btn-outline btn-sm" style="color:var(--gray-600);background:var(--gray-100);border-color:var(--gray-300)">📎 PDF 교체</span>
+          </label>
+          <input type="file" id="pdfFileInput" accept=".pdf" style="display:none" onchange="loadPdfFile(event)">
+        </div>
+        <div class="pdf-container">
+          <div class="pdf-placeholder" id="pdfPlaceholder">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="4" width="40" height="52" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 20h24M20 28h24M20 36h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M40 4v12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p>좌측에서 지원자를 선택하거나<br>PDF 파일을 업로드하세요</p>
+          </div>
+          <iframe id="pdfViewer" style="display:none;width:100%;height:100%;border:none"></iframe>
+        </div>
+      </div>
+
+      <!-- 평가 패널 -->
+      <div class="eval-panel" id="evalPanel">
+        <div class="eval-panel-header">
+          <div class="eval-panel-title" id="evalPanelName">지원자를 선택하세요</div>
+          <div class="eval-panel-sub" id="evalPanelSub">좌측 목록에서 평가할 지원자를 클릭하세요</div>
+        </div>
+
+        <div class="eval-body" id="evalBody">
+          <div class="empty-state">
+            <p>👈 좌측에서 지원자를 선택해주세요</p>
+          </div>
+        </div>
+
+        <div class="eval-footer" id="evalFooter" style="display:none">
+          <button class="save-btn" id="saveBtn" onclick="saveEvaluation()">💾 평가 결과 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 대시보드 탭 -->
+    <div class="dashboard-view" id="dashboardView">
+      <div class="dashboard-header">
+        <div class="dashboard-title" id="dashTitle">면접 평가 결과 대시보드</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 백업</button>
+          <button class="btn btn-navy btn-sm" onclick="window.print()">🖨️ 인쇄 / PDF</button>
+        </div>
+      </div>
+
+      <div class="stat-cards" id="statCards"></div>
+
+      <div class="result-table-wrap">
+        <div class="result-table-header">
+          <span class="result-table-title">📊 종합 순위표</span>
+          <span style="font-size:12px;opacity:0.7">점수 기준 자동 정렬 · 비고란 직접 입력 가능</span>
+        </div>
+        <table class="result-table" id="resultTable">
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>성명</th>
+              <th>직군</th>
+              <th>지원부서</th>
+              <th>평가위원 수</th>
+              <th>평균점수</th>
+              <th>보훈가점</th>
+              <th>최종점수</th>
+              <th>종합의견</th>
+              <th>비고</th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- 평가 상세 -->
+      <div class="result-table-wrap" id="detailSection">
+        <div class="result-table-header">
+          <span class="result-table-title">📋 평가위원별 상세 점수</span>
+        </div>
+        <div style="padding:16px" id="evalDetailList"></div>
+      </div>
+
+      <!-- 서명란 -->
+      <div class="print-signature" style="background:white;border-radius:10px;box-shadow:var(--shadow);padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:16px">서명란</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+          <div style="text-align:center;padding:16px;border:1px solid var(--gray-200);border-radius:8px">
+            <div style="font-size:12px;color:var(--gray-500);margin-bottom:30px">면접위원장</div>
+            <div style="border-top:1px solid var(--gray-300);padding-top:6px;font-size:11px;color:var(--gray-400)">(서명)</div>
+          </div>
+          <div style="text-align:center;padding:16px;border:1px solid var(--gray-200);border-radius:8px">
+            <div style="font-size:12px;color:var(--gray-500);margin-bottom:30px">인사담당자</div>
+            <div style="border-top:1px solid var(--gray-300);padding-top:6px;font-size:11px;color:var(--gray-400)">(서명)</div>
+          </div>
+          <div style="text-align:center;padding:16px;border:1px solid var(--gray-200);border-radius:8px">
+            <div style="font-size:12px;color:var(--gray-500);margin-bottom:30px">최종승인</div>
+            <div style="border-top:1px solid var(--gray-300);padding-top:6px;font-size:11px;color:var(--gray-400)">(서명)</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;text-align:right;font-size:11px;color:var(--gray-400)" id="printDate"></div>
+      </div>
+    </div>
+
+    <!-- 설정 탭 -->
+    <div class="settings-view" id="settingsView">
+      <div class="settings-card">
+        <div class="settings-card-title">🔗 Google Sheets 연동 설정</div>
+        <div class="settings-field">
+          <label>Google Apps Script 웹앱 URL</label>
+          <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" value="">
+          <div class="settings-help">아래 안내에 따라 Google Sheets에 Apps Script를 연결하면, 평가 데이터가 자동으로 스프레드시트에 저장됩니다.</div>
+        </div>
+        <div id="gasStatus" class="settings-status status-warn">⚠️ 아직 연동 전입니다. 현재는 브라우저 로컬 저장소만 사용 중입니다.</div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-navy btn-sm" onclick="testGasConnection()">🔗 연결 테스트</button>
+          <button class="btn btn-green btn-sm" onclick="saveGasUrl()">저장</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">📋 Google Sheets 연동 방법 (단계별 안내)</div>
+        <div style="font-size:13px;color:var(--gray-700);line-height:2;counter-reset:step">
+          <div style="background:var(--gray-50);border-radius:8px;padding:16px;font-size:12px;line-height:1.8;color:var(--gray-700)">
+            <strong>① Google Sheets 생성</strong><br>
+            drive.google.com → 새 스프레드시트 생성 → 이름: "계약직 면접평가 결과"<br><br>
+            <strong>② Apps Script 열기</strong><br>
+            확장 프로그램 → Apps Script 클릭<br><br>
+            <strong>③ 아래 코드 전체 붙여넣기 (기존 코드 삭제 후)</strong><br>
+            <div style="background:#1e1e1e;color:#d4d4d4;border-radius:6px;padding:12px;margin:8px 0;font-family:monospace;font-size:11px;white-space:pre-wrap">function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  var row = [
+    new Date(),
+    data.projectTitle || '',
+    data.applicantName || '',
+    data.jobType || '',
+    data.department || '',
+    data.evaluatorName || '',
+    data.evalDate || '',
+    data.score1 || 0,
+    data.score2 || 0,
+    data.score3 || 0,
+    data.score4 || 0,
+    data.score5 || 0,
+    data.totalScore || 0,
+    data.bohunPoint || 0,
+    data.finalScore || 0,
+    data.grade || '',
+    data.comment || ''
+  ];
+  sheet.appendRow(row);
+  return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON);
+}</div>
+            <strong>④ 배포</strong><br>
+            배포 → 새 배포 → 유형: 웹 앱 → 액세스: 모든 사용자 → 배포<br><br>
+            <strong>⑤ 웹앱 URL 복사 후 위 입력란에 붙여넣기</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">⚠️ 데이터 관리</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 전체 데이터 JSON 백업</button>
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="importData()">📤 백업 복원</button>
+          <button class="btn btn-red btn-sm" onclick="clearAllData()">🗑️ 전체 초기화</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
+      </div>
+    </div>
+
+  </div><!-- /main content -->
+</div><!-- /main -->
+
+<!-- 지원자 추가/수정 모달 -->
+<div class="modal-overlay" id="applicantModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">지원자 등록</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editingId">
+      <div class="modal-field">
+        <label>성명 *</label>
+        <input type="text" id="mName" placeholder="홍길동">
+      </div>
+      <div class="modal-field">
+        <label>지원부서 *</label>
+        <input type="text" id="mDept" placeholder="예: 총무인사팀, 연구지원팀">
+      </div>
+      <div class="modal-field">
+        <label>직군 *</label>
+        <select id="mJobType">
+          <option value="office">사무직</option>
+          <option value="labor">노무직</option>
+          <option value="research">연구직</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>보훈대상자 여부</label>
+        <select id="mBohun">
+          <option value="no">해당없음</option>
+          <option value="yes">해당</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>자기소개서 PDF (선택)</label>
+        <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('mPdfFile').click()">
+          <span style="font-size:24px">📄</span>
+          <span class="file-upload-label" id="uploadLabel">클릭하여 PDF 파일 선택</span>
+        </div>
+        <input type="file" id="mPdfFile" accept=".pdf" style="display:none" onchange="handlePdfSelect(event)">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" style="color:var(--gray-600)" onclick="closeModal()">취소</button>
+      <button class="btn btn-gold" onclick="saveApplicant()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 데이터 & 상태
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let appData = {
+  projectTitle: '2026년 5월 1일부 계약직원 채용 면접평가',
+  applicants: [],
+  evaluations: [],   // { id, applicantId, evaluatorName, evalDate, scores, bohunPoint, grade, comment }
+  remarks: {}        // { applicantId: '비고내용' }
+};
+
+let currentApplicantId = null;
+let pendingPdfData = null;  // 모달에서 선택한 PDF
+
+// 직군별 평가 항목
+const EVAL_ITEMS = {
+  office: [
+    { key: 's1', name: '대학직원으로서의 자세', max: 20 },
+    { key: 's2', name: '전문지식과 그 응용능력', max: 20 },
+    { key: 's3', name: '의사 표현의 정확성과 논리성', max: 20 },
+    { key: 's4', name: '예의·품행 및 성실성', max: 20 },
+    { key: 's5', name: '창의력·의지력 및 발전가능성', max: 20 },
+  ],
+  labor: [
+    { key: 's1', name: '신체건강 및 체력', max: 20 },
+    { key: 's2', name: '직무 관련 경험 및 기능', max: 20 },
+    { key: 's3', name: '성실성 및 책임감', max: 20 },
+    { key: 's4', name: '협조성 및 조직 적응력', max: 20 },
+    { key: 's5', name: '안전의식 및 발전가능성', max: 20 },
+  ],
+  research: [
+    { key: 's1', name: '전공 전문지식 수준', max: 20 },
+    { key: 's2', name: '연구 수행 능력 및 실적', max: 20 },
+    { key: 's3', name: '의사소통 및 논리적 표현', max: 20 },
+    { key: 's4', name: '협력 및 조직 기여도', max: 20 },
+    { key: 's5', name: '창의성 및 연구 발전가능성', max: 20 },
+  ]
+};
+
+const JOB_LABELS = { office: '사무직', labor: '노무직', research: '연구직' };
+const JOB_BADGES = { office: 'badge-office', labor: 'badge-labor', research: 'badge-research' };
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 초기화
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function init() {
+  loadFromStorage();
+  document.getElementById('projectTitle').value = appData.projectTitle;
+  document.getElementById('gasUrl').value = localStorage.getItem('gasUrl') || '';
+  renderApplicantList();
+  updateDashboard();
+  document.getElementById('printDate').textContent = '출력일시: ' + new Date().toLocaleString('ko-KR');
+
+  // 제목 변경 감지
+  document.getElementById('projectTitle').addEventListener('input', function() {
+    appData.projectTitle = this.value;
+    saveToStorage();
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 저장/로드 (localStorage)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function saveToStorage() {
+  // PDF 데이터는 용량이 커서 별도 저장
+  const saveData = JSON.parse(JSON.stringify(appData));
+  saveData.applicants = saveData.applicants.map(a => {
+    const copy = {...a};
+    // pdfData는 별도 key로 저장
+    if (copy.pdfData) {
+      localStorage.setItem('pdf_' + copy.id, copy.pdfData);
+      delete copy.pdfData;
+    }
+    return copy;
+  });
+  localStorage.setItem('interviewApp', JSON.stringify(saveData));
+}
+
+function loadFromStorage() {
+  const raw = localStorage.getItem('interviewApp');
+  if (raw) {
+    try {
+      const loaded = JSON.parse(raw);
+      appData = {...appData, ...loaded};
+      // PDF 복원
+      appData.applicants = appData.applicants.map(a => {
+        const pdf = localStorage.getItem('pdf_' + a.id);
+        if (pdf) a.pdfData = pdf;
+        return a;
+      });
+    } catch(e) { console.error('로드 오류', e); }
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 탭 전환
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('evalView').style.display = 'none';
+  document.getElementById('dashboardView').classList.remove('active');
+  document.getElementById('settingsView').classList.remove('active');
+
+  if (tab === 'eval') {
+    document.getElementById('tab-eval').classList.add('active');
+    document.getElementById('evalView').style.display = 'flex';
+  } else if (tab === 'dashboard') {
+    document.getElementById('tab-dashboard').classList.add('active');
+    document.getElementById('dashboardView').classList.add('active');
+    updateDashboard();
+  } else if (tab === 'settings') {
+    document.getElementById('tab-settings').classList.add('active');
+    document.getElementById('settingsView').classList.add('active');
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 지원자 목록 렌더링
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderApplicantList() {
+  const list = document.getElementById('applicantList');
+  const count = document.getElementById('applicantCount');
+  count.textContent = appData.applicants.length + '명';
+
+  if (appData.applicants.length === 0) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">등록된 지원자가 없습니다<br><br>아래 버튼으로 등록하세요</div>';
+    return;
+  }
+
+  list.innerHTML = appData.applicants.map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const evaluated = evals.length > 0;
+    return `
+    <div class="applicant-card ${evaluated ? 'evaluated' : ''} ${currentApplicantId === a.id ? 'active' : ''}"
+         onclick="selectApplicant('${a.id}')" id="card_${a.id}">
+      <div class="applicant-name">${a.name}</div>
+      <div class="applicant-meta">${a.department || '-'}</div>
+      <div>
+        <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun">보훈</span>' : ''}
+        ${evaluated ? `<span class="applicant-badge" style="background:#dcfce7;color:#166534">${evals.length}명 평가완료</span>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="icon-btn icon-btn-edit" onclick="event.stopPropagation();openEditModal('${a.id}')">✏️</button>
+        <button class="icon-btn icon-btn-del" onclick="event.stopPropagation();deleteApplicant('${a.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 지원자 선택 → 평가 패널 렌더링
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function selectApplicant(id) {
+  currentApplicantId = id;
+  renderApplicantList();
+  const a = appData.applicants.find(x => x.id === id);
+  if (!a) return;
+
+  // PDF
+  if (a.pdfData) {
+    document.getElementById('pdfPlaceholder').style.display = 'none';
+    document.getElementById('pdfViewer').style.display = 'block';
+    document.getElementById('pdfViewer').src = a.pdfData;
+  } else {
+    document.getElementById('pdfPlaceholder').style.display = 'flex';
+    document.getElementById('pdfViewer').style.display = 'none';
+  }
+  document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서`;
+
+  // 평가 패널
+  document.getElementById('evalPanelName').textContent = a.name;
+  document.getElementById('evalPanelSub').textContent = `${a.department || ''} · ${JOB_LABELS[a.jobType]}${a.bohun === 'yes' ? ' · 보훈대상자' : ''}`;
+  document.getElementById('evalFooter').style.display = 'flex';
+
+  renderEvalForm(a);
+}
+
+function renderEvalForm(a) {
+  const items = EVAL_ITEMS[a.jobType];
+  const today = new Date().toISOString().slice(0,10);
+
+  // 이전 내 평가 불러오기 (evaluatorName 기준)
+  const savedEval = null; // 새 평가로 시작
+
+  const html = `
+    <div class="eval-section">
+      <div class="eval-section-title">평가 기본 정보</div>
+      <div class="eval-meta-grid">
+        <div class="eval-field">
+          <label>면접위원 성함 *</label>
+          <input type="text" id="ef_evaluatorName" placeholder="홍길동">
+        </div>
+        <div class="eval-field">
+          <label>평가 일자 *</label>
+          <input type="date" id="ef_evalDate" value="${today}">
+        </div>
+        <div class="eval-field" style="grid-column:span 2">
+          <label>지원부서</label>
+          <input type="text" id="ef_dept" value="${a.department || ''}" readonly style="background:var(--gray-50)">
+        </div>
+      </div>
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">평가 항목 (각 20점, 합계 100점)</div>
+      ${items.map(item => `
+        <div class="score-item">
+          <div class="score-item-top">
+            <span class="score-item-name">${item.name}</span>
+            <span class="score-item-max">/ ${item.max}점</span>
+          </div>
+          <div class="score-slider-row">
+            <input type="range" class="score-slider" id="slider_${item.key}"
+              min="0" max="${item.max}" value="0"
+              oninput="syncScore('${item.key}', this.value)">
+            <input type="number" class="score-input" id="input_${item.key}"
+              min="0" max="${item.max}" value="0"
+              oninput="syncSlider('${item.key}', this.value)">
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">소계 및 보훈 가점</div>
+      <div class="total-box" style="margin-bottom:10px">
+        <span class="total-label">항목 합계</span>
+        <span class="total-score" id="subTotal">0 <span>/ 100점</span></span>
+      </div>
+      ${a.bohun === 'yes' ? `
+      <div class="bohun-box">
+        <div class="bohun-check">
+          <input type="checkbox" id="bohunCheck" onchange="calcTotal()">
+          <label for="bohunCheck">보훈 가점 적용</label>
+        </div>
+        <div class="bohun-score-wrap">
+          <label>가점</label>
+          <select id="bohunPoints" onchange="calcTotal()">
+            <option value="5">5점</option>
+            <option value="6">6점</option>
+            <option value="7">7점</option>
+            <option value="8">8점</option>
+            <option value="9">9점</option>
+            <option value="10">10점</option>
+          </select>
+        </div>
+      </div>` : ''}
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">최종 점수</div>
+      <div class="total-box">
+        <span class="total-label">최종 합산 점수</span>
+        <span class="total-score" id="finalTotal">0 <span>/ ${a.bohun === 'yes' ? '110' : '100'}점</span></span>
+      </div>
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">종합 평가 등급</div>
+      <div class="grade-select">
+        <select id="ef_grade">
+          <option value="">— 선택 —</option>
+          <option value="1">① 꼭 채용하고 싶다</option>
+          <option value="2">② 채용하고 싶다</option>
+          <option value="3">③ 잘 모르겠다</option>
+          <option value="4">④ 채용하고 싶지 않다</option>
+          <option value="5">⑤ 절대로 채용해서는 안 된다</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">종합 의견</div>
+      <textarea class="comment-area" id="ef_comment" placeholder="면접 종합 의견을 자유롭게 입력하세요..."></textarea>
+    </div>
+  `;
+
+  document.getElementById('evalBody').innerHTML = html;
+  calcTotal();
+}
+
+function syncScore(key, val) {
+  document.getElementById('input_' + key).value = val;
+  calcTotal();
+}
+function syncSlider(key, val) {
+  const slider = document.getElementById('slider_' + key);
+  const max = parseInt(slider.max);
+  val = Math.min(Math.max(0, parseInt(val)||0), max);
+  document.getElementById('input_' + key).value = val;
+  slider.value = val;
+  calcTotal();
+}
+
+function calcTotal() {
+  const keys = ['s1','s2','s3','s4','s5'];
+  let sub = 0;
+  keys.forEach(k => {
+    const el = document.getElementById('input_' + k);
+    if (el) sub += parseInt(el.value) || 0;
+  });
+  document.getElementById('subTotal').innerHTML = sub + ' <span>/ 100점</span>';
+
+  let bohun = 0;
+  const bohunCheck = document.getElementById('bohunCheck');
+  const bohunPoints = document.getElementById('bohunPoints');
+  if (bohunCheck && bohunCheck.checked && bohunPoints) {
+    bohun = parseInt(bohunPoints.value) || 0;
+  }
+
+  const final = sub + bohun;
+  const a = appData.applicants.find(x => x.id === currentApplicantId);
+  const maxScore = (a && a.bohun === 'yes') ? '110' : '100';
+  document.getElementById('finalTotal').innerHTML = final + ' <span>/ ' + maxScore + '점</span>';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 평가 저장
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function saveEvaluation() {
+  const evaluatorName = document.getElementById('ef_evaluatorName')?.value?.trim();
+  const evalDate = document.getElementById('ef_evalDate')?.value;
+
+  if (!evaluatorName) { showToast('면접위원 성함을 입력해주세요', 'error'); return; }
+  if (!evalDate) { showToast('평가 일자를 선택해주세요', 'error'); return; }
+
+  const grade = document.getElementById('ef_grade')?.value;
+  if (!grade) { showToast('종합 평가 등급을 선택해주세요', 'error'); return; }
+
+  const scores = {};
+  ['s1','s2','s3','s4','s5'].forEach(k => {
+    const el = document.getElementById('input_' + k);
+    scores[k] = el ? (parseInt(el.value) || 0) : 0;
+  });
+  const subTotal = Object.values(scores).reduce((a,b) => a+b, 0);
+
+  let bohunPoint = 0;
+  const bohunCheck = document.getElementById('bohunCheck');
+  const bohunPoints = document.getElementById('bohunPoints');
+  if (bohunCheck && bohunCheck.checked) {
+    bohunPoint = parseInt(bohunPoints?.value) || 0;
+  }
+  const finalScore = subTotal + bohunPoint;
+
+  const evalRecord = {
+    id: Date.now().toString(),
+    applicantId: currentApplicantId,
+    evaluatorName,
+    evalDate,
+    scores,
+    subTotal,
+    bohunPoint,
+    finalScore,
+    grade,
+    comment: document.getElementById('ef_comment')?.value || ''
+  };
+
+  appData.evaluations.push(evalRecord);
+  saveToStorage();
+
+  // GAS 전송 (no-cors — CORS 에러 없이 전송)
+  const gasUrl = localStorage.getItem('gasUrl');
+  if (gasUrl) {
+    const a = appData.applicants.find(x => x.id === currentApplicantId);
+    try {
+      fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+          projectTitle: appData.projectTitle,
+          applicantName: a?.name,
+          jobType: JOB_LABELS[a?.jobType],
+          department: a?.department,
+          evaluatorName,
+          evalDate,
+          score1: scores.s1, score2: scores.s2, score3: scores.s3,
+          score4: scores.s4, score5: scores.s5,
+          totalScore: subTotal,
+          bohunPoint,
+          finalScore,
+          grade,
+          comment: evalRecord.comment
+        })
+      });
+    } catch(e) { console.log('GAS 전송 오류 (로컬 저장은 완료):', e); }
+  }
+
+  renderApplicantList();
+
+  // 버튼 피드백
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '✅ 저장 완료!';
+  btn.classList.add('saved');
+  setTimeout(() => {
+    btn.textContent = '💾 평가 결과 저장';
+    btn.classList.remove('saved');
+    // 폼 초기화
+    renderEvalForm(appData.applicants.find(x => x.id === currentApplicantId));
+  }, 2000);
+
+  showToast('평가가 저장되었습니다!', 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 대시보드
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateDashboard() {
+  const total = appData.applicants.length;
+  const evaluated = appData.applicants.filter(a => appData.evaluations.some(e => e.applicantId === a.id)).length;
+  const pending = total - evaluated;
+  const evalCount = appData.evaluations.length;
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="stat-label">총 지원자</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card green"><div class="stat-label">평가 완료</div><div class="stat-value">${evaluated}</div></div>
+    <div class="stat-card red"><div class="stat-label">평가 대기</div><div class="stat-value">${pending}</div></div>
+    <div class="stat-card gold"><div class="stat-label">총 평가 건수</div><div class="stat-value">${evalCount}</div></div>
+  `;
+  document.getElementById('dashTitle').textContent = appData.projectTitle + ' — 결과';
+
+  // 지원자별 평균 점수 계산
+  const ranked = appData.applicants.map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    if (evals.length === 0) return { ...a, evalCount: 0, avgScore: 0, bohunPoint: 0, finalScore: 0, grades: [] };
+    const avgScore = evals.reduce((s,e) => s + e.subTotal, 0) / evals.length;
+    const bohunPoint = evals[evals.length-1].bohunPoint || 0;
+    return {
+      ...a,
+      evalCount: evals.length,
+      avgScore: Math.round(avgScore * 10) / 10,
+      bohunPoint,
+      finalScore: Math.round((avgScore + bohunPoint) * 10) / 10,
+      grades: evals.map(e => e.grade),
+      comments: evals.map(e => ({ evaluator: e.evaluatorName, comment: e.comment }))
+    };
+  }).sort((a, b) => b.finalScore - a.finalScore);
+
+  // 순위표
+  const tbody = document.getElementById('resultTableBody');
+  tbody.innerHTML = ranked.map((a, i) => {
+    const rank = i + 1;
+    const rankBadge = rank <= 3
+      ? `<span class="rank-badge rank-${rank}">${rank}</span>`
+      : `<span class="rank-badge rank-other">${rank}</span>`;
+    const gradeMap = {'1':'①','2':'②','3':'③','4':'④','5':'⑤'};
+    const gradeStr = a.grades.length ? a.grades.map(g => gradeMap[g]||g).join(', ') : '-';
+    return `
+    <tr>
+      <td>${rankBadge}</td>
+      <td><strong>${a.name}</strong></td>
+      <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span></td>
+      <td>${a.department || '-'}</td>
+      <td>${a.evalCount}명</td>
+      <td>${a.evalCount > 0 ? a.avgScore + '점' : '<span style="color:var(--gray-400)">미평가</span>'}</td>
+      <td>${a.bohunPoint > 0 ? '+' + a.bohunPoint + '점' : '-'}</td>
+      <td><strong style="color:var(--navy);font-size:15px">${a.evalCount > 0 ? a.finalScore + '점' : '-'}</strong></td>
+      <td style="font-size:12px">${gradeStr}</td>
+      <td><input class="remark-input" value="${appData.remarks[a.id] || ''}"
+        onchange="appData.remarks['${a.id}']=this.value;saveToStorage()" placeholder="특이사항..."></td>
+    </tr>`;
+  }).join('');
+
+  // 상세 평가 목록
+  const detailHtml = ranked.filter(a => a.evalCount > 0).map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const items = EVAL_ITEMS[a.jobType];
+    return `
+    <div class="eval-detail-card">
+      <div class="eval-detail-card-header">
+        <strong class="eval-detail-name">${a.name}</strong>
+        <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        <span style="font-size:12px;color:var(--gray-500)">${a.department || ''}</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--navy)">최종 ${a.finalScore}점</span>
+      </div>
+      <div class="eval-detail-body">
+        ${evals.map(ev => `
+          <div style="margin-bottom:12px;padding:10px;background:var(--gray-50);border-radius:6px">
+            <div style="font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:8px">
+              👤 ${ev.evaluatorName} · ${ev.evalDate}
+              &nbsp;<span style="color:var(--navy)">소계 ${ev.subTotal}점${ev.bohunPoint > 0 ? ' + 보훈 ' + ev.bohunPoint + '점' : ''} = <strong>${ev.finalScore}점</strong></span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px">
+              ${items.map((item, idx) => `
+                <div style="text-align:center">
+                  <div style="font-size:10px;color:var(--gray-500);line-height:1.3">${item.name.slice(0,6)}...</div>
+                  <div style="font-size:16px;font-weight:700;color:var(--navy)">${ev.scores['s'+(idx+1)] || 0}</div>
+                </div>`).join('')}
+            </div>
+            ${ev.comment ? `<div style="font-size:12px;color:var(--gray-600);background:white;padding:8px;border-radius:4px;border-left:3px solid var(--gold)">${ev.comment}</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('evalDetailList').innerHTML = detailHtml || '<div style="color:var(--gray-400);font-size:13px;padding:10px">아직 평가 데이터가 없습니다</div>';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 모달 (지원자 추가/수정)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openAddModal() {
+  pendingPdfData = null;
+  document.getElementById('modalTitle').textContent = '지원자 등록';
+  document.getElementById('editingId').value = '';
+  document.getElementById('mName').value = '';
+  document.getElementById('mDept').value = '';
+  document.getElementById('mJobType').value = 'office';
+  document.getElementById('mBohun').value = 'no';
+  document.getElementById('uploadLabel').textContent = '클릭하여 PDF 파일 선택';
+  document.getElementById('uploadArea').classList.remove('has-file');
+  document.getElementById('applicantModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const a = appData.applicants.find(x => x.id === id);
+  if (!a) return;
+  pendingPdfData = a.pdfData || null;
+  document.getElementById('modalTitle').textContent = '지원자 정보 수정';
+  document.getElementById('editingId').value = id;
+  document.getElementById('mName').value = a.name;
+  document.getElementById('mDept').value = a.department || '';
+  document.getElementById('mJobType').value = a.jobType;
+  document.getElementById('mBohun').value = a.bohun;
+  if (a.pdfData) {
+    document.getElementById('uploadLabel').textContent = 'PDF 등록됨 (클릭하여 교체)';
+    document.getElementById('uploadArea').classList.add('has-file');
+  } else {
+    document.getElementById('uploadLabel').textContent = '클릭하여 PDF 파일 선택';
+    document.getElementById('uploadArea').classList.remove('has-file');
+  }
+  document.getElementById('applicantModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('applicantModal').classList.remove('open');
+  pendingPdfData = null;
+}
+
+function handlePdfSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    pendingPdfData = ev.target.result;
+    document.getElementById('uploadLabel').textContent = `✅ ${file.name}`;
+    document.getElementById('uploadArea').classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveApplicant() {
+  const name = document.getElementById('mName').value.trim();
+  const dept = document.getElementById('mDept').value.trim();
+  const jobType = document.getElementById('mJobType').value;
+  const bohun = document.getElementById('mBohun').value;
+  const editingId = document.getElementById('editingId').value;
+
+  if (!name) { showToast('성명을 입력해주세요', 'error'); return; }
+
+  if (editingId) {
+    const idx = appData.applicants.findIndex(x => x.id === editingId);
+    if (idx >= 0) {
+      appData.applicants[idx] = { ...appData.applicants[idx], name, department: dept, jobType, bohun };
+      if (pendingPdfData) appData.applicants[idx].pdfData = pendingPdfData;
+    }
+    showToast('정보가 수정되었습니다');
+  } else {
+    const newId = Date.now().toString();
+    appData.applicants.push({ id: newId, name, department: dept, jobType, bohun, pdfData: pendingPdfData || null });
+    showToast('지원자가 등록되었습니다', 'success');
+  }
+
+  saveToStorage();
+  renderApplicantList();
+  closeModal();
+}
+
+function deleteApplicant(id) {
+  if (!confirm('이 지원자와 관련 평가 데이터를 모두 삭제할까요?')) return;
+  appData.applicants = appData.applicants.filter(x => x.id !== id);
+  appData.evaluations = appData.evaluations.filter(x => x.applicantId !== id);
+  delete appData.remarks[id];
+  localStorage.removeItem('pdf_' + id);
+  if (currentApplicantId === id) {
+    currentApplicantId = null;
+    document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>👈 좌측에서 지원자를 선택해주세요</p></div>';
+    document.getElementById('evalFooter').style.display = 'none';
+    document.getElementById('evalPanelName').textContent = '지원자를 선택하세요';
+    document.getElementById('evalPanelSub').textContent = '좌측 목록에서 평가할 지원자를 클릭하세요';
+  }
+  saveToStorage();
+  renderApplicantList();
+  showToast('삭제되었습니다');
+}
+
+// PDF 교체 (평가 패널)
+function loadPdfFile(e) {
+  const file = e.target.files[0];
+  if (!file || !currentApplicantId) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const data = ev.target.result;
+    const idx = appData.applicants.findIndex(x => x.id === currentApplicantId);
+    if (idx >= 0) {
+      appData.applicants[idx].pdfData = data;
+      saveToStorage();
+    }
+    document.getElementById('pdfPlaceholder').style.display = 'none';
+    document.getElementById('pdfViewer').style.display = 'block';
+    document.getElementById('pdfViewer').src = data;
+    showToast('PDF가 등록되었습니다', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GAS 설정
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function saveGasUrl() {
+  const url = document.getElementById('gasUrl').value.trim();
+  localStorage.setItem('gasUrl', url);
+  showToast('URL이 저장되었습니다', 'success');
+  updateGasStatus(url ? 'saved' : 'empty');
+}
+
+async function testGasConnection() {
+  const url = document.getElementById('gasUrl').value.trim();
+  if (!url) { showToast('URL을 먼저 입력해주세요', 'error'); return; }
+
+  updateGasStatus('testing');
+  showToast('테스트 데이터 전송 중...', '');
+
+  // no-cors로 전송 — CORS 에러 없이 GAS에 도달함
+  // 응답은 못 읽지만 Sheets에 행이 추가되는지로 확인
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        projectTitle: '⚙️ 연결 테스트',
+        applicantName: 'TEST',
+        jobType: '-', department: '-',
+        evaluatorName: '시스템테스트',
+        evalDate: new Date().toISOString().slice(0,10),
+        score1:0, score2:0, score3:0, score4:0, score5:0,
+        totalScore:0, bohunPoint:0, finalScore:0,
+        grade:'테스트', comment:'연결 테스트 행 — 삭제하셔도 됩니다'
+      })
+    });
+    // no-cors는 응답 확인 불가 → 전송은 됐을 가능성 높음
+    updateGasStatus('sent');
+    showToast('전송 완료! Google Sheets에 테스트 행이 추가됐는지 확인해주세요 📊', 'success');
+  } catch(e) {
+    updateGasStatus('error');
+    showToast('전송 실패: ' + e.message, 'error');
+  }
+}
+
+function updateGasStatus(state) {
+  const el = document.getElementById('gasStatus');
+  if (state === 'ok') {
+    el.className = 'settings-status status-ok';
+    el.textContent = '✅ Google Sheets 연동 확인됨! 평가 데이터가 자동으로 저장됩니다.';
+  } else if (state === 'sent') {
+    el.className = 'settings-status status-ok';
+    el.textContent = '📊 테스트 전송 완료! Google Sheets 열어서 새 행이 추가됐는지 확인해주세요. (맨 아래 행에 "연결 테스트" 행이 보이면 성공!)';
+  } else if (state === 'error') {
+    el.className = 'settings-status status-err';
+    el.textContent = '❌ 전송 실패. URL이 올바른지, Apps Script가 "모든 사용자" 권한으로 배포됐는지 확인해주세요.';
+  } else if (state === 'testing') {
+    el.className = 'settings-status status-warn';
+    el.textContent = '🔄 테스트 데이터 전송 중...';
+  } else if (state === 'saved') {
+    el.className = 'settings-status status-warn';
+    el.textContent = '⚠️ URL 저장됨. "연결 테스트" 버튼으로 Sheets에 행이 추가되는지 확인하세요.';
+  } else {
+    el.className = 'settings-status status-warn';
+    el.textContent = '⚠️ 아직 연동 전입니다. 현재는 브라우저 로컬 저장소만 사용 중입니다.';
+  }
+}
+    el.className = 'settings-status status-warn';
+    el.textContent = '⚠️ URL이 저장됐습니다. "연결 테스트" 버튼으로 확인해보세요.';
+  } else {
+    el.className = 'settings-status status-warn';
+    el.textContent = '⚠️ 아직 연동 전입니다. 현재는 브라우저 로컬 저장소만 사용 중입니다.';
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 백업 / 복원
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `면접평가_백업_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('백업 파일이 다운로드되었습니다', 'success');
+}
+
+function importData() { document.getElementById('importFile').click(); }
+function doImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (confirm('기존 데이터를 백업 파일로 덮어쓸까요?\n현재 데이터는 사라집니다.')) {
+        appData = data;
+        saveToStorage();
+        renderApplicantList();
+        updateDashboard();
+        showToast('복원 완료!', 'success');
+      }
+    } catch(e) { showToast('파일 형식이 올바르지 않습니다', 'error'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('⚠️ 모든 데이터(지원자, 평가)가 삭제됩니다.\n반드시 백업 후 진행하세요. 계속할까요?')) return;
+  appData = { projectTitle: appData.projectTitle, applicants: [], evaluations: [], remarks: {} };
+  localStorage.removeItem('interviewApp');
+  currentApplicantId = null;
+  renderApplicantList();
+  updateDashboard();
+  showToast('초기화되었습니다');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 토스트
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2800);
+}
+
+// GAS URL 있으면 상태 업데이트
+window.addEventListener('DOMContentLoaded', () => {
+  init();
+  if (localStorage.getItem('gasUrl')) updateGasStatus('saved');
+  // 초기 탭
+  showTab('eval');
+});
+</script>
+</body>
+</html>
