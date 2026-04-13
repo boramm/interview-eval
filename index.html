@@ -1054,16 +1054,11 @@ function selectApplicant(id) {
   const a = appData.applicants.find(x => x.id === id);
   if (!a) return;
 
-  // PDF
-  if (a.pdfData) {
-    document.getElementById('pdfPlaceholder').style.display = 'none';
-    document.getElementById('pdfViewer').style.display = 'block';
-    document.getElementById('pdfViewer').src = a.pdfData;
-  } else {
-    document.getElementById('pdfPlaceholder').style.display = 'flex';
-    document.getElementById('pdfViewer').style.display = 'none';
-  }
-  document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서`;
+  // PDF — 선택 시 placeholder 표시 (파일은 매번 직접 업로드)
+  document.getElementById('pdfPlaceholder').style.display = 'flex';
+  document.getElementById('pdfViewer').style.display = 'none';
+  document.getElementById('pdfViewer').src = '';
+  document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서 (PDF 교체 버튼으로 업로드)`;
 
   // 평가 패널
   document.getElementById('evalPanelName').textContent = a.name;
@@ -1256,30 +1251,31 @@ async function saveEvaluation() {
   appData.evaluations.push(evalRecord);
   saveToStorage();
 
-  // GAS 전송 (no-cors — CORS 에러 없이 전송)
+  // GAS 전송 — GET+쿼리스트링 방식 (CORS 완전 우회)
   const gasUrl = localStorage.getItem('gasUrl');
   if (gasUrl) {
     const a = appData.applicants.find(x => x.id === currentApplicantId);
     try {
-      fetch(gasUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({
-          projectTitle: appData.projectTitle,
-          applicantName: a?.name,
-          jobType: JOB_LABELS[a?.jobType],
-          department: a?.department,
-          evaluatorName,
-          evalDate,
-          score1: scores.s1, score2: scores.s2, score3: scores.s3,
-          score4: scores.s4, score5: scores.s5,
-          totalScore: subTotal,
-          bohunPoint,
-          finalScore,
-          grade,
-          comment: evalRecord.comment
-        })
+      const params = new URLSearchParams({
+        projectTitle: appData.projectTitle,
+        applicantName: a?.name || '',
+        jobType: JOB_LABELS[a?.jobType] || '',
+        department: a?.department || '',
+        evaluatorName,
+        evalDate,
+        score1: scores.s1, score2: scores.s2, score3: scores.s3,
+        score4: scores.s4, score5: scores.s5,
+        totalScore: subTotal,
+        bohunPoint,
+        finalScore,
+        grade,
+        comment: evalRecord.comment || ''
       });
+      const sc = document.createElement('script');
+      sc.src = gasUrl + '?' + params.toString();
+      sc.onload = () => { try { document.head.removeChild(sc); } catch(e){} };
+      sc.onerror = () => { try { document.head.removeChild(sc); } catch(e){} };
+      document.head.appendChild(sc);
     } catch(e) { console.log('GAS 전송 오류 (로컬 저장은 완료):', e); }
   }
 
@@ -1436,13 +1432,10 @@ function closeModal() {
 function handlePdfSelect(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    pendingPdfData = ev.target.result;
-    document.getElementById('uploadLabel').textContent = `✅ ${file.name}`;
-    document.getElementById('uploadArea').classList.add('has-file');
-  };
-  reader.readAsDataURL(file);
+  // 파일 객체 자체를 메모리에 보관 (localStorage 저장 안 함)
+  pendingPdfData = file;
+  document.getElementById('uploadLabel').textContent = '✅ ' + file.name;
+  document.getElementById('uploadArea').classList.add('has-file');
 }
 
 function saveApplicant() {
@@ -1490,24 +1483,18 @@ function deleteApplicant(id) {
   showToast('삭제되었습니다');
 }
 
-// PDF 교체 (평가 패널)
+// PDF 교체 (평가 패널) — Object URL 방식
 function loadPdfFile(e) {
   const file = e.target.files[0];
   if (!file || !currentApplicantId) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const data = ev.target.result;
-    const idx = appData.applicants.findIndex(x => x.id === currentApplicantId);
-    if (idx >= 0) {
-      appData.applicants[idx].pdfData = data;
-      saveToStorage();
-    }
-    document.getElementById('pdfPlaceholder').style.display = 'none';
-    document.getElementById('pdfViewer').style.display = 'block';
-    document.getElementById('pdfViewer').src = data;
-    showToast('PDF가 등록되었습니다', 'success');
-  };
-  reader.readAsDataURL(file);
+  const viewer = document.getElementById('pdfViewer');
+  if (viewer.src && viewer.src.startsWith('blob:')) URL.revokeObjectURL(viewer.src);
+  const url = URL.createObjectURL(file);
+  document.getElementById('pdfPlaceholder').style.display = 'none';
+  viewer.style.display = 'block';
+  viewer.src = url;
+  document.getElementById('pdfPanelTitle').textContent = '📄 ' + file.name;
+  showToast('PDF가 열렸습니다 ✅', 'success');
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
