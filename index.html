@@ -874,6 +874,12 @@ function doGet(e) {
         </div>
       </div>
 
+      <div class="settings-card" id="absenceCard" style="display:none">
+        <div class="settings-card-title">🚫 결시 관리 (관리자 전용)</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">결시 처리하면 모든 평가위원에게 즉시 반영됩니다.</div>
+        <div id="absenceList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
       <div class="settings-card">
         <div class="settings-card-title">⚠️ 데이터 관리</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1172,6 +1178,10 @@ function showTab(tab) {
   } else if (tab === 'settings') {
     document.getElementById('tab-settings').classList.add('active');
     document.getElementById('settingsView').classList.add('active');
+    // 관리자만 결시 관리 표시
+    const isAdmin = currentUser && currentUser.id === '005923';
+    document.getElementById('absenceCard').style.display = isAdmin ? 'block' : 'none';
+    if (isAdmin) renderAbsenceList();
   }
 }
 
@@ -1200,15 +1210,22 @@ function renderApplicantList() {
     const isSubmitted = myEval?.submitted;
     const evaluated = evals.length > 0;
     return `
-    <div class="applicant-card ${evaluated ? 'evaluated' : ''} ${currentApplicantId === a.id ? 'active' : ''}"
-         onclick="selectApplicant('${a.id}')" id="card_${a.id}">
-      <div class="applicant-name">${a.num ? a.num + '. ' : ''}${a.name}</div>
+    <div class="applicant-card ${a.absent ? '' : evaluated ? 'evaluated' : ''} ${currentApplicantId === a.id ? 'active' : ''}"
+         onclick="${a.absent ? '' : `selectApplicant('${a.id}')`}"
+         id="card_${a.id}"
+         style="${a.absent ? 'opacity:0.45;background:#f9fafb;cursor:not-allowed;' : 'cursor:pointer'}">
+      <div class="applicant-name" style="${a.absent ? 'text-decoration:line-through;color:var(--gray-400)' : ''}">
+        ${a.num ? a.num + '. ' : ''}${a.name}
+      </div>
       <div class="applicant-meta">${a.department || '-'}</div>
       <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
-        <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
-        ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun">보훈</span>' : ''}
-        ${isSubmitted ? '<span class="applicant-badge" style="background:#dcfce7;color:#166534">✅ 제출완료</span>' :
-          myEval ? '<span class="applicant-badge" style="background:#fef3c7;color:#92400e">임시저장</span>' : ''}
+        ${a.absent
+          ? '<span class="applicant-badge" style="background:#fee2e2;color:var(--red)">🚫 결시</span>'
+          : `<span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+             ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun">보훈</span>' : ''}
+             ${isSubmitted ? '<span class="applicant-badge" style="background:#dcfce7;color:#166534">✅ 제출완료</span>' :
+               myEval ? '<span class="applicant-badge" style="background:#fef3c7;color:#92400e">임시저장</span>' : ''}`
+        }
       </div>
       ${currentUser && currentUser.scope === 'all' ? `
       <div class="card-actions">
@@ -1223,10 +1240,10 @@ function renderApplicantList() {
 // 지원자 선택 → 평가 패널 렌더링
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function selectApplicant(id) {
+  const a = appData.applicants.find(x => x.id === id);
+  if (!a || a.absent) return; // 결시 차단
   currentApplicantId = id;
   renderApplicantList();
-  const a = appData.applicants.find(x => x.id === id);
-  if (!a) return;
 
   // PDF — Drive 링크 있으면 바로 표시
   const viewer = document.getElementById('pdfViewer');
@@ -1764,6 +1781,52 @@ function updateGasStatus(state) {
     el.className = 'settings-status status-warn';
     el.textContent = '⚠️ 아직 연동 전입니다. 현재는 브라우저 로컬 저장소만 사용 중입니다.';
   }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 결시 관리
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderAbsenceList() {
+  const list = document.getElementById('absenceList');
+  if (!list) return;
+  list.innerHTML = appData.applicants.map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+      padding:10px 14px;border-radius:8px;border:1px solid var(--gray-200);
+      background:${a.absent ? '#fef2f2' : 'white'}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:600;color:${a.absent ? 'var(--red)' : 'var(--gray-800)'}">
+          ${a.num ? a.num + '. ' : ''}${a.name}
+        </span>
+        <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        <span style="font-size:12px;color:var(--gray-500)">${a.department}</span>
+        ${a.absent ? '<span class="applicant-badge" style="background:#fee2e2;color:var(--red)">🚫 결시</span>' : ''}
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--red);font-weight:600">
+        <input type="checkbox" ${a.absent ? 'checked' : ''}
+          onchange="toggleAbsence('${a.id}', this.checked)"
+          style="width:16px;height:16px;cursor:pointer;accent-color:var(--red)">
+        결시
+      </label>
+    </div>
+  `).join('');
+}
+
+function toggleAbsence(id, isAbsent) {
+  const idx = appData.applicants.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  appData.applicants[idx].absent = isAbsent;
+  saveToStorage();
+  renderAbsenceList();
+  renderApplicantList();
+  // 현재 선택된 지원자가 결시 처리되면 패널 초기화
+  if (currentApplicantId === id && isAbsent) {
+    currentApplicantId = null;
+    document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';
+    document.getElementById('evalFooter').style.display = 'none';
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfPlaceholder').style.display = 'flex';
+  }
+  showToast(isAbsent ? '결시 처리되었습니다' : '결시가 취소되었습니다', isAbsent ? 'error' : 'success');
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
