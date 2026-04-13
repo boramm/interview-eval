@@ -1359,7 +1359,10 @@ function renderEvalForm(a) {
   const savedScores = myPrevEval ? myPrevEval.scores : {};
   const savedGrade = myPrevEval ? myPrevEval.grade : '';
   const savedComment = myPrevEval ? myPrevEval.comment : '';
-  const savedDate = new Date().toISOString().slice(0,10); // 항상 오늘 날짜
+  // 한국 로컬 날짜 (UTC+9 보정)
+  const _now = new Date();
+  const _kst = new Date(_now.getTime() + 9 * 60 * 60 * 1000);
+  const savedDate = _kst.toISOString().slice(0,10); // 항상 오늘 날짜 (KST)
   const savedBohunPoint = myPrevEval ? myPrevEval.bohunPoint : 0;
   const savedBohunChecked = savedBohunPoint > 0;
 
