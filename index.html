@@ -1964,7 +1964,12 @@ function printFinalReport() {
     const validScores = Object.values(scores).filter(s => s !== null);
     const sum = validScores.reduce((a,b)=>a+b,0);
     const avg = validScores.length > 0 ? Math.round((sum/validScores.length)*10)/10 : 0;
-    return { ...a, scores, sum, avg, evalCount: validScores.length };
+    // 항목별 평균 (동점자 처리용 - 규정 제12조)
+    const itemAvg = [1,2,3,4,5].map(i => {
+      const vals = evals.filter(e=>e.submitted).map(e=>e.scores?.['s'+i]||0);
+      return vals.length > 0 ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+    });
+    return { ...a, scores, sum, avg, evalCount: validScores.length, itemAvg };
   }
 
   // 전체 지원자 결과 (결시 포함)
@@ -1976,12 +1981,37 @@ function printFinalReport() {
     return r;
   });
 
-  // 부서별로 순위 부여 (결시 제외)
+  // 부서별로 순위 부여 (결시 제외, 규정 제12조 동점자 처리)
   Object.keys(deptGroups).forEach(dept => {
     const deptResults = allResults
       .filter(a => (a.deptGroup || a.department) === dept && !a.absent && a.evalCount > 0)
-      .sort((a,b) => b.avg - a.avg);
-    deptResults.forEach((a, i) => { a.rank = i + 1; });
+      .sort((a,b) => {
+        // 1차: 평균점수
+        if (b.avg !== a.avg) return b.avg - a.avg;
+        // 2차~6차: 평정요소 순서대로 (규정 제12조)
+        for (let i = 0; i < 5; i++) {
+          const diff = (b.itemAvg?.[i]||0) - (a.itemAvg?.[i]||0);
+          if (diff !== 0) return diff;
+        }
+        return 0;
+      });
+    let rank = 1;
+    deptResults.forEach((a, i) => {
+      if (i > 0) {
+        const prev = deptResults[i-1];
+        // 평균과 모든 항목이 완전히 같을 때만 공동순위
+        const allSame = a.avg === prev.avg &&
+          [0,1,2,3,4].every(j => (a.itemAvg?.[j]||0) === (prev.itemAvg?.[j]||0));
+        if (allSame) {
+          a.rank = prev.rank;
+        } else {
+          a.rank = rank;
+        }
+      } else {
+        a.rank = rank;
+      }
+      rank = a.rank + 1;
+    });
   });
 
   // 부서별 순위표 생성
