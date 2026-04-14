@@ -1884,37 +1884,26 @@ function saveGasUrl() {
   updateGasStatus(url ? 'saved' : 'empty');
 }
 
-async function testGasConnection() {
+function testGasConnection() {
   const url = document.getElementById('gasUrl').value.trim();
   if (!url) { showToast('URL을 먼저 입력해주세요', 'error'); return; }
 
   updateGasStatus('testing');
   showToast('테스트 데이터 전송 중...', '');
 
-  // no-cors로 전송 — CORS 에러 없이 GAS에 도달함
-  // 응답은 못 읽지만 Sheets에 행이 추가되는지로 확인
-  try {
-    await fetch(url, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({
-        projectTitle: '⚙️ 연결 테스트',
-        applicantName: 'TEST',
-        jobType: '-', department: '-',
-        evaluatorName: '시스템테스트',
-        evalDate: new Date().toISOString().slice(0,10),
-        score1:0, score2:0, score3:0, score4:0, score5:0,
-        totalScore:0, bohunPoint:0, finalScore:0,
-        grade:'테스트', comment:'연결 테스트 행 — 삭제하셔도 됩니다'
-      })
-    });
-    // no-cors는 응답 확인 불가 → 전송은 됐을 가능성 높음
-    updateGasStatus('sent');
-    showToast('전송 완료! Google Sheets에 테스트 행이 추가됐는지 확인해주세요 📊', 'success');
-  } catch(e) {
-    updateGasStatus('error');
-    showToast('전송 실패: ' + e.message, 'error');
-  }
+  // img GET 방식 — CSP 우회
+  sendToGAS(url, {
+    projectTitle: '⚙️ 연결 테스트',
+    applicantName: 'TEST',
+    jobType: '-', department: '-',
+    evaluatorName: '시스템테스트',
+    evalDate: new Date().toISOString().slice(0,10),
+    score1:0, score2:0, score3:0, score4:0, score5:0,
+    totalScore:0, bohunPoint:0, finalScore:0,
+    grade:'테스트', comment:'연결 테스트 행 — 삭제하셔도 됩니다'
+  });
+  updateGasStatus('sent');
+  showToast('전송 완료! 5초 후 Google Sheets에 테스트 행이 추가됐는지 확인해주세요 📊', 'success');
 }
 
 function updateGasStatus(state) {
