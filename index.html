@@ -779,6 +779,7 @@
         </div>
 
         <div class="eval-footer" id="evalFooter" style="display:none">
+          <button class="save-btn" id="absentBtn" onclick="markAbsent()" style="flex:1;background:#dc2626;font-size:13px">🚫 결시</button>
           <button class="save-btn" id="saveBtn" onclick="saveEvaluation()" style="flex:2">💾 임시 저장</button>
           <button class="save-btn" id="submitBtn" onclick="openSubmitModal()" style="flex:1;background:var(--green);font-size:13px">✅ 최종 제출</button>
         </div>
@@ -1362,6 +1363,18 @@ function renderEvalForm(a) {
     ? appData.evaluations.filter(e => e.applicantId === a.id && e.evaluatorName === currentUser.name).slice(-1)[0]
     : null;
   const isSubmitted = myPrevEval?.submitted;
+
+  // 결시 처리된 경우 바로 결시 화면 표시
+  if (myPrevEval?.isAbsent) {
+    document.getElementById('evalBody').innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
+        <div style="font-size:48px">🚫</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red)">결시 처리된 지원자</div>
+        <div style="font-size:13px;color:var(--gray-500);text-align:center">${a.name} 지원자는<br>결시 처리되었습니다</div>
+      </div>`;
+    document.getElementById('evalFooter').style.display = 'none';
+    return;
+  }
   // 저장된 점수 복원
   const savedScores = myPrevEval ? myPrevEval.scores : {};
   const savedGrade = myPrevEval ? myPrevEval.grade : '';
@@ -1505,6 +1518,75 @@ function calcTotal() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 평가 저장
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 결시 처리 (개별 심사위원)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function markAbsent() {
+  if (!currentUser || !currentApplicantId) return;
+  const a = appData.applicants.find(x => x.id === currentApplicantId);
+  if (!a) return;
+
+  // 이미 결시 처리된 경우
+  const myEval = appData.evaluations.find(e =>
+    e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name
+  );
+  if (myEval?.isAbsent) {
+    showToast('이미 결시 처리된 지원자입니다', 'error'); return;
+  }
+
+  if (!confirm(`${a.name} 지원자를 결시 처리하시겠습니까?
+결시 처리 후에는 평가가 불가능합니다.`)) return;
+
+  // 결시 평가 레코드 저장
+  const absentRecord = {
+    id: Date.now().toString(),
+    applicantId: currentApplicantId,
+    evaluatorName: currentUser.name,
+    evalDate: new Date().toISOString().slice(0,10),
+    scores: { s1:0, s2:0, s3:0, s4:0, s5:0 },
+    subTotal: 0, bohunPoint: 0, finalScore: 0,
+    grade: '결시', comment: '[결시]',
+    submitted: true, isAbsent: true,
+    submittedAt: new Date().toISOString()
+  };
+
+  // 기존 평가 있으면 교체
+  const prevIdx = appData.evaluations.findIndex(
+    e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name
+  );
+  if (prevIdx >= 0) appData.evaluations[prevIdx] = absentRecord;
+  else appData.evaluations.push(absentRecord);
+
+  saveToStorage();
+
+  // Sheets에 결시 기록
+  const gasUrl = localStorage.getItem('gasUrl');
+  if (gasUrl) {
+    sendToGAS(gasUrl, {
+      projectTitle: appData.projectTitle,
+      applicantName: a.name,
+      jobType: JOB_LABELS[a.jobType],
+      department: a.department,
+      evaluatorName: currentUser.name,
+      evalDate: absentRecord.evalDate,
+      score1:0, score2:0, score3:0, score4:0, score5:0,
+      totalScore:0, bohunPoint:0, finalScore:0,
+      grade:'결시', comment:'[결시]'
+    });
+  }
+
+  renderApplicantList();
+  // 평가 패널 결시 표시
+  document.getElementById('evalBody').innerHTML = `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
+      <div style="font-size:48px">🚫</div>
+      <div style="font-size:16px;font-weight:700;color:var(--red)">결시 처리 완료</div>
+      <div style="font-size:13px;color:var(--gray-500);text-align:center">${a.name} 지원자는<br>결시 처리되었습니다</div>
+    </div>`;
+  document.getElementById('evalFooter').style.display = 'none';
+  showToast(`${a.name} 결시 처리 완료`, 'error');
+}
+
 async function saveEvaluation() {
   if (!currentUser) { showToast('로그인이 필요합니다', 'error'); return; }
 
@@ -2235,6 +2317,7 @@ async function syncFromSheets() {
       );
       if (exists) return;
 
+      const isAbsentRow = String(row[15]||'') === '결시' || String(row[16]||'').includes('[결시]');
       newEvals.push({
         id: Date.now().toString() + Math.random(),
         applicantId: applicant.id,
@@ -2253,6 +2336,7 @@ async function syncFromSheets() {
         grade: String(row[15]||''),
         comment: String(row[16]||''),
         submitted: true,
+        isAbsent: isAbsentRow,
         syncedFromSheets: true
       });
     });
