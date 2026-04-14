@@ -2309,11 +2309,10 @@ async function syncFromSheets() {
       const applicant = appData.applicants.find(a => a.name === applicantName);
       if (!applicant) return;
 
-      // 중복 체크 (같은 평가위원 + 같은 지원자 + 같은 날짜)
+      // 중복 체크 (같은 평가위원 + 같은 지원자면 무조건 스킵)
       const exists = appData.evaluations.find(e =>
         e.evaluatorName === evaluatorName &&
-        e.applicantId === applicant.id &&
-        e.evalDate === evalDate
+        e.applicantId === applicant.id
       );
       if (exists) return;
 
