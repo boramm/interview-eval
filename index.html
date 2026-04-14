@@ -1940,8 +1940,10 @@ function printFinalReport() {
   const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'});
   const title = appData.projectTitle;
 
-  // 전체 평가위원 목록 (실제 평가한 사람)
-  const evaluatorNames = [...new Set(appData.evaluations.map(e => e.evaluatorName))];
+  // 실제 평가한 평가위원 목록
+  const evaluatorNames = [...new Set(
+    appData.evaluations.filter(e => e.submitted).map(e => e.evaluatorName)
+  )];
 
   // 부서별 그룹핑
   const deptGroups = {};
@@ -1951,86 +1953,91 @@ function printFinalReport() {
     deptGroups[dept].push(a);
   });
 
-  // 부서별 테이블 생성
-  function buildDeptTable(dept, applicants) {
-    // 이 부서 평가한 평가위원만
-    const deptEvaluators = evaluatorNames.filter(evName =>
+  // 지원자별 점수 계산
+  function calcResult(a) {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id && e.submitted);
+    const scores = {};
+    evaluatorNames.forEach(evName => {
+      const ev = evals.find(e => e.evaluatorName === evName);
+      scores[evName] = ev ? ev.finalScore : null;
+    });
+    const validScores = Object.values(scores).filter(s => s !== null);
+    const sum = validScores.reduce((a,b)=>a+b,0);
+    const avg = validScores.length > 0 ? Math.round((sum/validScores.length)*10)/10 : 0;
+    return { ...a, scores, sum, avg, evalCount: validScores.length };
+  }
+
+  // 전체 지원자 결과 (결시 포함)
+  const allResults = appData.applicants.map(calcResult);
+
+  // 순위 부여 (결시 제외)
+  const validResults = allResults.filter(a => !a.absent && a.evalCount > 0)
+    .sort((a,b) => b.avg - a.avg);
+  validResults.forEach((a, i) => { a.rank = i + 1; });
+
+  // 부서별 순위표 생성
+  function buildSection(dept, applicants) {
+    const deptResults = applicants.map(a => allResults.find(r => r.id === a.id));
+
+    // 이 부서 평가한 위원만
+    const deptEvals = evaluatorNames.filter(evName =>
       appData.evaluations.some(ev => {
-        const a = appData.applicants.find(x => x.id === ev.applicantId);
-        return ev.evaluatorName === evName && (a?.deptGroup || a?.department) === dept;
+        const ap = appData.applicants.find(x => x.id === ev.applicantId);
+        return ev.evaluatorName === evName && ev.submitted &&
+               (ap?.deptGroup || ap?.department) === dept;
       })
     );
 
-    // 지원자별 점수 계산
-    const results = applicants.map(a => {
-      const evals = appData.evaluations.filter(e => e.applicantId === a.id && e.submitted);
-      const scores = {};
-      deptEvaluators.forEach(evName => {
-        const ev = evals.find(e => e.evaluatorName === evName);
-        scores[evName] = ev ? ev.finalScore : null;
-      });
-      const validScores = Object.values(scores).filter(s => s !== null);
-      const avg = validScores.length > 0 ? (validScores.reduce((a,b)=>a+b,0) / validScores.length) : 0;
-      return { ...a, scores, avg: Math.round(avg*10)/10, evalCount: validScores.length };
-    });
-
-    // 결시 제외하고 순위 정렬
-    const ranked = [...results]
-      .filter(a => !a.absent)
-      .sort((a,b) => b.avg - a.avg);
-    let rank = 0;
-    ranked.forEach(a => { rank++; a.rank = rank; });
-
-    // 평가위원 헤더
-    const evHeaders = deptEvaluators.map(n =>
-      `<th style="padding:8px 10px;border:1px solid #ccc;background:#1a2744;color:white;font-size:11px;min-width:60px">${n}</th>`
+    const evHeaders = deptEvals.map(n =>
+      `<th style="padding:8px 12px;border:1px solid #d1d5db;background:#1a2744;color:white;font-size:12px;text-align:center">${n}</th>`
     ).join('');
 
-    // 지원자 행
-    const rows = results.map(a => {
-      const rankCell = a.absent
-        ? `<td style="text-align:center;padding:8px;border:1px solid #ccc;background:#fee2e2;color:#991b1b;font-weight:700">결시</td>`
-        : `<td style="text-align:center;padding:8px;border:1px solid #ccc;font-weight:700;font-size:14px">
-            ${a.rank === 1 ? '🥇' : a.rank === 2 ? '🥈' : a.rank === 3 ? '🥉' : a.rank + '위'}
-           </td>`;
+    const rows = deptResults.map(a => {
+      const rankStr = a.absent
+        ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700">결시</span>`
+        : a.rank === 1
+          ? `<span style="background:#c9a84c;color:#1a2744;padding:3px 10px;border-radius:4px;font-size:13px;font-weight:700">1위 ★</span>`
+          : `<span style="color:#374151;font-weight:600">${a.rank}위</span>`;
 
-      const scoreCells = deptEvaluators.map(evName => {
+      const scoreCells = deptEvals.map(evName => {
         const score = a.scores[evName];
-        if (a.absent) return `<td style="text-align:center;padding:8px;border:1px solid #ccc;background:#fee2e2;color:#991b1b">결시</td>`;
-        return `<td style="text-align:center;padding:8px;border:1px solid #ccc;font-size:13px">${score !== null ? score+'점' : '—'}</td>`;
+        if (a.absent) return `<td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;background:#fef2f2;color:#991b1b;font-size:13px">결시</td>`;
+        return `<td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;font-size:14px">${score !== null ? score : '—'}</td>`;
       }).join('');
 
-      const rowBg = a.absent ? 'background:#fef2f2' : a.rank === 1 ? 'background:#fefce8' : '';
+      const rowStyle = a.absent ? 'background:#fef2f2' : a.rank === 1 ? 'background:#fefce8' : '';
 
-      return `<tr style="${rowBg}">
-        ${rankCell}
-        <td style="padding:8px 10px;border:1px solid #ccc;font-size:11px;color:#666">${a.num||''}</td>
-        <td style="padding:8px 10px;border:1px solid #ccc;font-weight:700">
+      return `<tr style="${rowStyle}">
+        <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center">${rankStr}</td>
+        <td style="padding:8px 12px;border:1px solid #d1d5db;font-size:12px;color:#6b7280;text-align:center">${a.num||''}</td>
+        <td style="padding:8px 12px;border:1px solid #d1d5db;font-weight:700;font-size:14px">
           ${a.name}
-          ${a.bohun==='yes'?'<span style="font-size:9px;background:#fce7f3;color:#9d174d;padding:1px 4px;border-radius:3px;margin-left:4px">보훈</span>':''}
-          ${a.absent?'<span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px;margin-left:4px;font-weight:700">결시</span>':''}
+          ${a.bohun==='yes'?'<span style="font-size:10px;background:#fce7f3;color:#9d174d;padding:1px 5px;border-radius:3px;margin-left:4px">보훈+5</span>':''}
         </td>
         ${scoreCells}
-        <td style="text-align:center;padding:8px;border:1px solid #ccc;font-weight:700;color:#1a2744;font-size:15px;background:#f0f9ff">
+        <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;font-weight:700;font-size:15px;color:#1a2744">
           ${a.absent ? '<span style="color:#991b1b">결시</span>' : (a.evalCount > 0 ? a.avg+'점' : '—')}
         </td>
       </tr>`;
     }).join('');
 
+    // 1위 선발자
+    const winner = deptResults.filter(a=>!a.absent&&a.evalCount>0).sort((a,b)=>b.avg-a.avg)[0];
+
     return `
-      <div style="margin-bottom:28px;page-break-inside:avoid">
-        <div style="background:#1a2744;color:#e8c97a;font-weight:700;font-size:14px;padding:10px 16px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between">
-          <span>${dept} 부문</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.7)">지원자 ${applicants.length}명 (결시 ${applicants.filter(a=>a.absent).length}명)</span>
+      <div style="margin-bottom:24px">
+        <div style="background:#1a2744;padding:10px 16px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#e8c97a;font-weight:700;font-size:15px">${dept} 부문</span>
+          ${winner ? `<span style="background:#e8c97a;color:#1a2744;padding:3px 12px;border-radius:4px;font-size:13px;font-weight:700">최종 선발: ${winner.name} (${winner.avg}점)</span>` : ''}
         </div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <table style="width:100%;border-collapse:collapse">
           <thead>
             <tr>
-              <th style="padding:8px 10px;border:1px solid #ccc;background:#2d4a8a;color:white;font-size:11px">순위</th>
-              <th style="padding:8px 10px;border:1px solid #ccc;background:#2d4a8a;color:white;font-size:11px">가번호</th>
-              <th style="padding:8px 10px;border:1px solid #ccc;background:#2d4a8a;color:white;font-size:11px">성명</th>
+              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px;text-align:center;min-width:80px">순위</th>
+              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px;text-align:center">가번호</th>
+              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px">성명</th>
               ${evHeaders}
-              <th style="padding:8px 10px;border:1px solid #ccc;background:#2d4a8a;color:white;font-size:11px">평균점수</th>
+              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px;text-align:center">평균</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -2038,18 +2045,19 @@ function printFinalReport() {
       </div>`;
   }
 
-  const allTables = Object.entries(deptGroups)
-    .map(([dept, applicants]) => buildDeptTable(dept, applicants))
+  const sections = Object.entries(deptGroups)
+    .map(([dept, applicants]) => buildSection(dept, applicants))
     .join('');
 
-  const win = window.open('', '_blank', 'width=900,height=1100');
+  const win = window.open('', '_blank', 'width=960,height=1100');
   win.document.write(`<!DOCTYPE html>
 <html lang="ko"><head>
-<meta charset="UTF-8"><title>내부기안용 최종결과표</title>
+<meta charset="UTF-8">
+<title>최종결과표</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Noto Sans KR',sans-serif;padding:28px;background:white;color:#1f2937}
+  body{font-family:'Noto Sans KR',sans-serif;padding:32px;background:white;color:#1f2937}
   @media print{
     @page{size:A4 landscape;margin:12mm}
     body{padding:0}
@@ -2057,46 +2065,49 @@ function printFinalReport() {
   }
 </style>
 </head><body>
-<div class="no-print" style="text-align:right;margin-bottom:16px">
-  <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
-    🖨️ 인쇄 / PDF
+
+<div class="no-print" style="text-align:right;margin-bottom:20px">
+  <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
+    🖨️ 인쇄 / PDF 저장
   </button>
 </div>
 
-<!-- 문서 헤더 -->
-<div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1a2744">
-  <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">삼육대학교  내부결재용</div>
-  <div style="font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:#1a2744;margin-bottom:6px">
+<!-- 헤더 -->
+<div style="text-align:center;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #1a2744">
+  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;letter-spacing:2px">삼육대학교  내부결재용</div>
+  <div style="font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;color:#1a2744;letter-spacing:2px;margin-bottom:6px">
     계약직원 채용 면접평가 최종결과표
   </div>
   <div style="font-size:13px;color:#6b7280">${title}</div>
-  <div style="font-size:11px;color:#9ca3af;margin-top:4px">작성일: ${today}</div>
+  <div style="font-size:12px;color:#9ca3af;margin-top:4px">작성일: ${today} &nbsp;|&nbsp; 평가위원: ${evaluatorNames.join(' · ')}</div>
 </div>
 
-${allTables}
+<!-- 부서별 결과 -->
+${sections}
 
 <!-- 결재란 -->
-<div style="margin-top:24px;display:flex;justify-content:flex-end">
+<div style="margin-top:28px;display:flex;justify-content:space-between;align-items:flex-end">
+  <div style="font-size:11px;color:#9ca3af">
+    본 문서는 삼육대학교 계약직원 채용 면접 평가 시스템에서 자동 생성되었습니다.
+  </div>
   <table style="border-collapse:collapse;font-size:12px">
     <tr>
-      <td style="padding:6px 20px;border:1px solid #ccc;text-align:center;background:#f3f4f6;font-weight:600">담당</td>
-      <td style="padding:6px 20px;border:1px solid #ccc;text-align:center;background:#f3f4f6;font-weight:600">팀장</td>
-      <td style="padding:6px 20px;border:1px solid #ccc;text-align:center;background:#f3f4f6;font-weight:600">처장</td>
+      <td style="padding:6px 24px;border:1px solid #d1d5db;text-align:center;background:#f3f4f6;font-weight:700;color:#1a2744">담 당</td>
+      <td style="padding:6px 24px;border:1px solid #d1d5db;text-align:center;background:#f3f4f6;font-weight:700;color:#1a2744">팀 장</td>
+      <td style="padding:6px 24px;border:1px solid #d1d5db;text-align:center;background:#f3f4f6;font-weight:700;color:#1a2744">처 장</td>
     </tr>
     <tr>
-      <td style="padding:30px 20px;border:1px solid #ccc;text-align:center;min-width:80px"></td>
-      <td style="padding:30px 20px;border:1px solid #ccc;text-align:center;min-width:80px"></td>
-      <td style="padding:30px 20px;border:1px solid #ccc;text-align:center;min-width:80px"></td>
+      <td style="padding:36px 24px;border:1px solid #d1d5db;min-width:90px"></td>
+      <td style="padding:36px 24px;border:1px solid #d1d5db;min-width:90px"></td>
+      <td style="padding:36px 24px;border:1px solid #d1d5db;min-width:90px"></td>
     </tr>
   </table>
 </div>
 
-<div style="margin-top:16px;text-align:right;font-size:11px;color:#9ca3af">
-  본 문서는 삼육대학교 계약직원 채용 면접 평가 시스템에서 자동 생성되었습니다.
-</div>
 </body></html>`);
   win.document.close();
 }
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 결시 관리
