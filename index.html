@@ -2289,31 +2289,32 @@ async function syncFromSheets() {
       return;
     }
 
-    // 헤더 제외
-    const rows = data.rows.slice(1).filter(row => row[5]); // evaluatorName 있는 행만
+    // 헤더 제외 + 유효한 행만
+    const rows = data.rows.slice(1).filter(row => row[5] && row[2]);
 
-    let added = 0;
+    // Sheets 데이터를 평가위원+지원자 기준으로 그룹핑 → 마지막 행(최신)만 사용
+    const latestMap = {};
     rows.forEach(row => {
+      const key = String(row[5]).trim() + '||' + String(row[2]).trim();
+      latestMap[key] = row; // 나중 행이 덮어씀 = 최신 데이터
+    });
+
+    // 기존 평가 초기화 후 최신 데이터로 재구성
+    appData.evaluations = [];
+
+    Object.values(latestMap).forEach(row => {
       const evaluatorName = String(row[5] || '').trim();
       const applicantName = String(row[2] || '').trim();
-      if (!evaluatorName || !applicantName) return;
-
       const applicant = appData.applicants.find(a => a.name === applicantName);
       if (!applicant) return;
 
       const grade = String(row[15] || '').trim();
       const comment = String(row[16] || '').trim();
-      const isAbsentRow = grade === '결시' || comment.includes('결시') || comment.includes('[결시]');
-
+      const isAbsentRow = grade === '결시' || comment.includes('결시') || comment.includes('[결시]') || comment.includes('면접결시');
       const evalDate = row[6] ? String(row[6]).slice(0,10) : '';
 
-      // 같은 평가위원 + 같은 지원자 → 덮어쓰기 (최신 데이터 우선)
-      const existingIdx = appData.evaluations.findIndex(e =>
-        e.evaluatorName === evaluatorName && e.applicantId === applicant.id
-      );
-
-      const newEval = {
-        id: existingIdx >= 0 ? appData.evaluations[existingIdx].id : (Date.now().toString() + Math.random()),
+      appData.evaluations.push({
+        id: Date.now().toString() + Math.random(),
         applicantId: applicant.id,
         evaluatorName,
         evalDate,
@@ -2332,14 +2333,7 @@ async function syncFromSheets() {
         submitted: true,
         isAbsent: isAbsentRow,
         syncedFromSheets: true
-      };
-
-      if (existingIdx >= 0) {
-        appData.evaluations[existingIdx] = newEval;
-      } else {
-        appData.evaluations.push(newEval);
-        added++;
-      }
+      });
     });
 
     saveToStorage();
