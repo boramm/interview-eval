@@ -1173,7 +1173,7 @@ function doFinalSubmit() {
 function init() {
   loadFromStorage();
   document.getElementById('projectTitle').value = appData.projectTitle;
-  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwHjIGe3SjG9xP9ftaUcNrlJToGrmnxxpVGVOBJpdn3bh543dysOtP_p-vTJf_tavQR/exec';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbx1ea4mq5Hw3XdsYW7WytrbocFSt9MM9q2_2gz62MNhgYIeQsOPgTzvHQ7jWyZr50Pb/exec';
   if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', DEFAULT_GAS_URL);
   document.getElementById('gasUrl').value = localStorage.getItem('gasUrl');
   renderApplicantList();
