@@ -2351,6 +2351,230 @@ async function syncFromSheets() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 선발결과 확인서명서 (면접평가표)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function printSignature() {
+  if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
+  const isAdmin = currentUser.id === '005923' || currentUser.id === '000206';
+  if (isAdmin) {
+    openSignatureModal();
+  } else {
+    generateSignaturePrint(currentUser.name);
+  }
+}
+
+function openSignatureModal() {
+  const evaluatorNames = [...new Set(appData.evaluations.filter(e=>e.submitted&&!e.isAbsent).map(e => e.evaluatorName))];
+  if (evaluatorNames.length === 0) { showToast('평가 데이터가 없습니다. Sheets 동기화를 먼저 해주세요.', 'error'); return; }
+  const deptList = [...new Set(appData.applicants.map(a => a.deptGroup || a.department))].filter(Boolean);
+  const deptOptions = ['전체', ...deptList].map(d => `<option value="${d}">${d}</option>`).join('');
+
+  let modal = document.getElementById('sigSelectModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'sigSelectModal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <span class="modal-title">📝 면접평가표 출력 설정</span>
+        <button class="modal-close" onclick="document.getElementById('sigSelectModal').classList.remove('open')">×</button>
+      </div>
+      <div class="modal-body" style="gap:14px">
+        <div class="modal-field">
+          <label>부서 선택</label>
+          <select id="sigDept" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:14px;font-family:'Noto Sans KR',sans-serif">
+            ${deptOptions}
+          </select>
+        </div>
+        <div style="background:#eff6ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#1e40af;line-height:1.8">
+          <strong>출력 방식</strong><br>
+          • 부서별로 필터링하여 출력합니다<br>
+          • 해당 부서를 평가한 <strong>심사위원 1명당 1장</strong>씩 출력됩니다
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" style="color:var(--gray-600)" onclick="document.getElementById('sigSelectModal').classList.remove('open')">취소</button>
+        <button class="btn btn-gold" onclick="
+          const dept = document.getElementById('sigDept').value;
+          document.getElementById('sigSelectModal').classList.remove('open');
+          generateSignaturePrint(null, dept === '전체' ? null : dept);
+        ">출력하기</button>
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+function generateSignaturePrint(evaluatorName, deptFilter) {
+  const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'});
+  const title = appData.projectTitle;
+  const gradeMap = {'1':'① 꼭 채용하고 싶다','2':'② 채용하고 싶다','3':'③ 잘 모르겠다','4':'④ 채용하고 싶지 않다','5':'⑤ 절대로 채용해서는 안된다'};
+  const ITEM_NAMES = ['대학 직원으로서의 자세(20점)','전문지식과 그 응용능력(20점)','의사 표현의 정확성과 논리성(20점)','예의·품행 및 성실성(20점)','창의력·의지력 및 발전 가능성(20점)'];
+
+  const evalsByEvaluator = {};
+  appData.evaluations.forEach(ev => {
+    if (!ev.submitted) return;
+    const a = appData.applicants.find(x => x.id === ev.applicantId);
+    if (!a) return;
+    const dept = a.deptGroup || a.department || '기타';
+    if (deptFilter && dept !== deptFilter) return;
+    if (evaluatorName && ev.evaluatorName !== evaluatorName) return;
+    if (!evalsByEvaluator[ev.evaluatorName]) evalsByEvaluator[ev.evaluatorName] = [];
+    if (!evalsByEvaluator[ev.evaluatorName].find(x => x.applicantId === ev.applicantId)) {
+      evalsByEvaluator[ev.evaluatorName].push({ev, applicant: a});
+    }
+  });
+
+  const evaluatorList = Object.keys(evalsByEvaluator);
+  if (evaluatorList.length === 0) { showToast('출력할 데이터가 없습니다.', 'error'); return; }
+
+  function buildPage(evName, items) {
+    const evalInfo = EVALUATORS.find(e => e.name === evName);
+    const evalTitle = evalInfo ? evalInfo.title : '';
+    const deptName = items[0]?.applicant?.department || '';
+    // 결시 제외
+    const validItems = items.filter(({ev}) => !ev.isAbsent);
+    const absentItems = items.filter(({ev}) => ev.isAbsent);
+
+    const applicantCols = validItems.map(({applicant}) =>
+      `<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#f5f5f5;font-size:12px">
+        ${applicant.name}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}
+      </th>`
+    ).join('') + absentItems.map(({applicant}) =>
+      `<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#fef2f2;font-size:12px;color:#991b1b">
+        ${applicant.name}<br><span style="font-size:9px">결시</span>
+      </th>`
+    ).join('');
+
+    const scoreRows = ITEM_NAMES.map((name, idx) => {
+      const key = 's'+(idx+1);
+      const cells = validItems.map(({ev}) =>
+        `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[key]||0}</td>`
+      ).join('') + absentItems.map(() =>
+        `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;background:#fef2f2;color:#991b1b">결시</td>`
+      ).join('');
+      return `<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa">${name}</td>${cells}</tr>`;
+    }).join('');
+
+    const totalCells = validItems.map(({ev}) =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:14px;color:#1a2744">${ev.subTotal}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`
+    ).join('');
+
+    const hasBohun = validItems.some(({applicant}) => applicant.bohun === 'yes');
+    const bohunRow = hasBohun ? `<tr>
+      <td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fdf2f8;color:#9d174d;font-weight:600">보훈 가점</td>
+      ${validItems.map(({ev,applicant}) =>
+        `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;color:#9d174d">${applicant.bohun==='yes'&&ev.bohunPoint>0?'+'+ev.bohunPoint:'—'}</td>`
+      ).join('')}${absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;background:#fef2f2"></td>`).join('')}
+    </tr>` : '';
+
+    const finalCells = validItems.map(({ev}) =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:15px;color:#1a2744;background:#fefce8">${ev.finalScore}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`
+    ).join('');
+
+    const gradeCells = validItems.map(({ev}) =>
+      `<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;font-size:10px;color:#374151">${gradeMap[ev.grade]||''}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;background:#fef2f2;font-size:10px;color:#991b1b">결시</td>`
+    ).join('');
+
+    const commentCells = validItems.map(({ev}) =>
+      `<td style="padding:8px;border:1px solid #ccc;font-size:11px;color:#555;vertical-align:top">${(ev.comment||'').replace('[최종제출] ','')}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:8px;border:1px solid #ccc;background:#fef2f2;font-size:11px;color:#991b1b;text-align:center">면접 결시</td>`
+    ).join('');
+
+    const allCols = validItems.length + absentItems.length;
+
+    return `
+    <div style="page-break-after:always;padding-bottom:20px">
+      <div style="font-size:10px;color:#666;margin-bottom:6px">[별지 제2호 서식]</div>
+      <div style="border-top:3px solid #e53e3e;border-bottom:3px solid #38a169;padding:10px 0;text-align:center;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;letter-spacing:4px">계약직원 채용 면접평가표</div>
+        <div style="font-size:12px;color:#666;margin-top:4px">${title}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
+        <thead>
+          <tr>
+            <th style="padding:8px 12px;border:1px solid #ccc;background:#1a2744;color:#e8c97a;font-size:13px;text-align:left;min-width:180px">지원부서 : ${deptName}</th>
+            ${applicantCols}
+          </tr>
+          <tr>
+            <th style="padding:7px 12px;border:1px solid #ccc;text-align:center;background:#2d4a8a;color:white;font-size:12px">평가항목</th>
+            ${Array(allCols).fill('<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#2d4a8a;color:white;font-size:11px">지 원 자 명</th>').join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${scoreRows}
+          <tr style="background:#e8f0fe">
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px">합계 (100점)</td>
+            ${totalCells}
+          </tr>
+          ${bohunRow}
+          <tr style="background:#fefce8">
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px">최종점수</td>
+            ${finalCells}
+          </tr>
+          <tr>
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#f0f4ff">종합평가 작성란</td>
+            ${gradeCells}
+          </tr>
+          <tr>
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#fafafa">※ 추천이유 및 기타 소견</td>
+            ${commentCells}
+          </tr>
+        </tbody>
+      </table>
+      <div style="text-align:center;font-size:13px;margin:20px 0 14px;color:#374151">${today}</div>
+      <div style="text-align:right;font-size:14px;padding-right:40px">
+        면접위원 : <strong>${evName}</strong>&nbsp;&nbsp;(${evalTitle})
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(인)
+      </div>
+    </div>`;
+  }
+
+  const allPages = evaluatorList.map(evName => buildPage(evName, evalsByEvaluator[evName])).join('');
+  const deptLabel = deptFilter || '전체';
+
+  const win = window.open('', '_blank', 'width=900,height=1100');
+  win.document.write(`<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="UTF-8"><title>면접평가표 - ${deptLabel}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans KR',sans-serif;padding:24px;background:white}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @media print{
+    @page{size:A4 landscape;margin:12mm}
+    body{padding:0}
+    .no-print{display:none!important}
+    div[style*="page-break-after"]:last-child{page-break-after:auto!important}
+  }
+</style>
+</head><body>
+<div class="no-print" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f3f4f6;border-radius:8px">
+  <div style="font-size:14px;font-weight:600;color:#1a2744">
+    📋 [${deptLabel}] 심사위원 ${evaluatorList.length}명 &nbsp;—&nbsp; 1인 1장
+    <span style="font-size:12px;color:#6b7280;font-weight:400;margin-left:8px">${evaluatorList.join(' · ')}</span>
+  </div>
+  <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
+    🖨️ 전체 인쇄 / PDF
+  </button>
+</div>
+${allPages}
+</body></html>`);
+  win.document.close();
+}
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 토스트
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let toastTimer;
