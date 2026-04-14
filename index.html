@@ -1998,33 +1998,33 @@ function printFinalReport() {
     );
 
     const evHeaders = deptEvals.map(n =>
-      `<th style="padding:8px 12px;border:1px solid #d1d5db;background:#1a2744;color:white;font-size:12px;text-align:center">${n}</th>`
+      `<th style="padding:5px 8px;border:1px solid #d1d5db;background:#1a2744;color:white;font-size:11px;text-align:center">${n}</th>`
     ).join('');
 
     const rows = deptResults.map(a => {
       const rankStr = a.absent
-        ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700">결시</span>`
+        ? `<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">결시</span>`
         : a.rank === 1
-          ? `<span style="background:#c9a84c;color:#1a2744;padding:3px 10px;border-radius:4px;font-size:13px;font-weight:700">1위 ★</span>`
-          : `<span style="color:#374151;font-weight:600">${a.rank}위</span>`;
+          ? `<span style="background:#c9a84c;color:#1a2744;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:700">1위 ★</span>`
+          : `<span style="color:#374151;font-weight:600;font-size:11px">${a.rank}위</span>`;
 
       const scoreCells = deptEvals.map(evName => {
         const score = a.scores[evName];
-        if (a.absent) return `<td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;background:#fef2f2;color:#991b1b;font-size:13px">결시</td>`;
-        return `<td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;font-size:14px">${score !== null ? score : '—'}</td>`;
+        if (a.absent) return `<td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;background:#fef2f2;color:#991b1b;font-size:11px">결시</td>`;
+        return `<td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;font-size:12px">${score !== null ? score : '—'}</td>`;
       }).join('');
 
       const rowStyle = a.absent ? 'background:#fef2f2' : a.rank === 1 ? 'background:#fefce8' : '';
 
       return `<tr style="${rowStyle}">
-        <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center">${rankStr}</td>
-        <td style="padding:8px 12px;border:1px solid #d1d5db;font-size:12px;color:#6b7280;text-align:center">${a.num||''}</td>
-        <td style="padding:8px 12px;border:1px solid #d1d5db;font-weight:700;font-size:14px">
+        <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center">${rankStr}</td>
+        <td style="padding:5px 8px;border:1px solid #d1d5db;font-size:10px;color:#6b7280;text-align:center">${a.num||''}</td>
+        <td style="padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:12px">
           ${a.name}
-          ${a.bohun==='yes'?'<span style="font-size:10px;background:#fce7f3;color:#9d174d;padding:1px 5px;border-radius:3px;margin-left:4px">보훈+5</span>':''}
+          ${a.bohun==='yes'?'<span style="font-size:9px;background:#fce7f3;color:#9d174d;padding:1px 4px;border-radius:2px;margin-left:3px">보훈+5</span>':''}
         </td>
         ${scoreCells}
-        <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;font-weight:700;font-size:15px;color:#1a2744">
+        <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700;font-size:13px;color:#1a2744">
           ${a.absent ? '<span style="color:#991b1b">결시</span>' : (a.evalCount > 0 ? a.avg+'점' : '—')}
         </td>
       </tr>`;
@@ -2034,19 +2034,19 @@ function printFinalReport() {
     const winner = deptResults.filter(a=>!a.absent&&a.evalCount>0).sort((a,b)=>b.avg-a.avg)[0];
 
     return `
-      <div style="margin-bottom:24px">
-        <div style="background:#1a2744;padding:10px 16px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
-          <span style="color:#e8c97a;font-weight:700;font-size:15px">${dept} 부문</span>
-          ${winner ? `<span style="background:#e8c97a;color:#1a2744;padding:3px 12px;border-radius:4px;font-size:13px;font-weight:700">최종 선발: ${winner.name} (${winner.avg}점)</span>` : ''}
+      <div style="margin-bottom:14px">
+        <div style="background:#1a2744;padding:6px 12px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#e8c97a;font-weight:700;font-size:13px">${dept} 부문</span>
+          ${winner ? `<span style="background:#e8c97a;color:#1a2744;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700">최종 선발: ${winner.name} (${winner.avg}점)</span>` : ''}
         </div>
         <table style="width:100%;border-collapse:collapse">
           <thead>
             <tr>
-              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px;text-align:center;min-width:80px">순위</th>
-              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px;text-align:center">가번호</th>
-              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px">성명</th>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px;text-align:center;min-width:60px">순위</th>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px;text-align:center">가번호</th>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px">성명</th>
               ${evHeaders}
-              <th style="padding:8px 12px;border:1px solid #d1d5db;background:#374151;color:white;font-size:12px;text-align:center">평균</th>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px;text-align:center">평균</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -2058,7 +2058,7 @@ function printFinalReport() {
     .map(([dept, applicants]) => buildSection(dept, applicants))
     .join('');
 
-  const win = window.open('', '_blank', 'width=960,height=1100');
+  const win = window.open('', '_blank', 'width=800,height=1100');
   win.document.write(`<!DOCTYPE html>
 <html lang="ko"><head>
 <meta charset="UTF-8">
@@ -2066,11 +2066,13 @@ function printFinalReport() {
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Noto Sans KR',sans-serif;padding:32px;background:white;color:#1f2937}
+  body{font-family:'Noto Sans KR',sans-serif;padding:20px 28px;background:white;color:#1f2937;font-size:11px}
+  table{font-size:11px}
   @media print{
-    @page{size:A4 landscape;margin:12mm}
-    body{padding:0}
+    @page{size:A4 portrait;margin:10mm}
+    body{padding:0;font-size:10px}
     .no-print{display:none!important}
+    table{font-size:10px}
   }
 </style>
 </head><body>
@@ -2082,13 +2084,13 @@ function printFinalReport() {
 </div>
 
 <!-- 헤더 -->
-<div style="text-align:center;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #1a2744">
-  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;letter-spacing:2px">삼육대학교  내부결재용</div>
-  <div style="font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;color:#1a2744;letter-spacing:2px;margin-bottom:6px">
+<div style="text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #1a2744">
+  <div style="font-size:10px;color:#9ca3af;margin-bottom:3px;letter-spacing:2px">삼육대학교  내부결재용</div>
+  <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#1a2744;letter-spacing:1px;margin-bottom:3px">
     계약직원 채용 면접평가 최종결과표
   </div>
-  <div style="font-size:13px;color:#6b7280">${title}</div>
-  <div style="font-size:12px;color:#9ca3af;margin-top:4px">작성일: ${today} &nbsp;|&nbsp; 평가위원: ${evaluatorNames.join(' · ')}</div>
+  <div style="font-size:11px;color:#6b7280">${title}</div>
+  <div style="font-size:10px;color:#9ca3af;margin-top:3px">작성일: ${today} &nbsp;|&nbsp; 평가위원: ${evaluatorNames.join(' · ')}</div>
 </div>
 
 <!-- 부서별 결과 -->
