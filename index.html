@@ -2064,7 +2064,7 @@ function printFinalReport() {
     const winner = deptResults.filter(a=>!a.absent&&a.evalCount>0).sort((a,b)=>b.avg-a.avg)[0];
 
     return `
-      <div style="margin-bottom:14px">
+      <div style="margin-bottom:18px">
         <div style="background:#1a2744;padding:6px 12px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
           <span style="color:#e8c97a;font-weight:700;font-size:13px">${dept} 부문</span>
           ${winner ? `<span style="background:#e8c97a;color:#1a2744;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700">최종 선발: ${winner.name} (${winner.avg}점)</span>` : ''}
@@ -2096,15 +2096,15 @@ function printFinalReport() {
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Noto Sans KR',sans-serif;padding:20px 28px;background:white;color:#1f2937;font-size:11px}
-  table{font-size:11px;border-collapse:collapse;width:100%}
+  body{font-family:'Noto Sans KR',sans-serif;padding:24px 32px;background:white;color:#1f2937;font-size:12px}
+  table{font-size:12px;border-collapse:collapse;width:100%}
   th,td{border:1px solid #d1d5db}
-  /* 인쇄 시 배경색 강제 적용 */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   @media print{
-    @page{size:A4 portrait;margin:10mm}
+    @page{size:A4 portrait;margin:16mm 14mm}
     body{padding:0;font-size:11px}
     .no-print{display:none!important}
+    table{font-size:11px}
   }
 </style>
 </head><body>
