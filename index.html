@@ -1968,7 +1968,13 @@ function printFinalReport() {
   }
 
   // 전체 지원자 결과 (결시 포함)
-  const allResults = appData.applicants.map(calcResult);
+  const allResults = appData.applicants.map(a => {
+    const r = calcResult(a);
+    // absent 플래그이거나 모든 점수가 0이면 결시로 처리
+    const allZero = r.evalCount > 0 && Object.values(r.scores).every(s => s === 0 || s === null);
+    if (allZero) r.absent = true;
+    return r;
+  });
 
   // 순위 부여 (결시 제외)
   const validResults = allResults.filter(a => !a.absent && a.evalCount > 0)
@@ -2085,23 +2091,8 @@ function printFinalReport() {
 <!-- 부서별 결과 -->
 ${sections}
 
-<!-- 결재란 -->
-<div style="margin-top:28px;display:flex;justify-content:space-between;align-items:flex-end">
-  <div style="font-size:11px;color:#9ca3af">
-    본 문서는 삼육대학교 계약직원 채용 면접 평가 시스템에서 자동 생성되었습니다.
-  </div>
-  <table style="border-collapse:collapse;font-size:12px">
-    <tr>
-      <td style="padding:6px 24px;border:1px solid #d1d5db;text-align:center;background:#f3f4f6;font-weight:700;color:#1a2744">담 당</td>
-      <td style="padding:6px 24px;border:1px solid #d1d5db;text-align:center;background:#f3f4f6;font-weight:700;color:#1a2744">팀 장</td>
-      <td style="padding:6px 24px;border:1px solid #d1d5db;text-align:center;background:#f3f4f6;font-weight:700;color:#1a2744">처 장</td>
-    </tr>
-    <tr>
-      <td style="padding:36px 24px;border:1px solid #d1d5db;min-width:90px"></td>
-      <td style="padding:36px 24px;border:1px solid #d1d5db;min-width:90px"></td>
-      <td style="padding:36px 24px;border:1px solid #d1d5db;min-width:90px"></td>
-    </tr>
-  </table>
+<div style="margin-top:20px;font-size:11px;color:#9ca3af;text-align:right">
+  본 문서는 삼육대학교 계약직원 채용 면접 평가 시스템에서 자동 생성되었습니다.
 </div>
 
 </body></html>`);
