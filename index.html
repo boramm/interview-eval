@@ -1976,10 +1976,13 @@ function printFinalReport() {
     return r;
   });
 
-  // 순위 부여 (결시 제외)
-  const validResults = allResults.filter(a => !a.absent && a.evalCount > 0)
-    .sort((a,b) => b.avg - a.avg);
-  validResults.forEach((a, i) => { a.rank = i + 1; });
+  // 부서별로 순위 부여 (결시 제외)
+  Object.keys(deptGroups).forEach(dept => {
+    const deptResults = allResults
+      .filter(a => (a.deptGroup || a.department) === dept && !a.absent && a.evalCount > 0)
+      .sort((a,b) => b.avg - a.avg);
+    deptResults.forEach((a, i) => { a.rank = i + 1; });
+  });
 
   // 부서별 순위표 생성
   function buildSection(dept, applicants) {
