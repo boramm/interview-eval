@@ -631,6 +631,166 @@
 
   .no-select { display: none; }
   .has-select { display: block; }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     태블릿 반응형 (가로 모드 최적화)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  
+  /* 태블릿 네비게이션 바 (기본 숨김) */
+  .tablet-nav {
+    display: none;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 12px 16px;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  
+  .tablet-nav select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+    color: var(--gray-800);
+    background: var(--white);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.15s;
+  }
+  
+  .tablet-nav select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  
+  .tablet-nav-btn {
+    padding: 8px 16px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 6px;
+    background: var(--white);
+    color: var(--gray-700);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  
+  .tablet-nav-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+  }
+  
+  .tablet-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 1023px) {
+    /* 태블릿: 상단 네비게이션 표시 */
+    .tablet-nav {
+      display: flex;
+    }
+    
+    /* 좌측 사이드바 숨김 */
+    .sidebar {
+      display: none;
+    }
+    
+    /* 콘텐츠 영역 2분할 */
+    .content {
+      flex-direction: row;
+    }
+    
+    /* PDF 뷰어 70% */
+    .pdf-viewer {
+      width: 70%;
+      flex-shrink: 0;
+    }
+    
+    /* 평가 영역 30% */
+    .eval-view {
+      width: 30%;
+      flex-shrink: 0;
+    }
+    
+    /* 대시보드는 전체 너비 */
+    .dashboard-view {
+      width: 100%;
+    }
+    
+    /* 설정 탭도 전체 너비 */
+    .settings-view {
+      width: 100%;
+    }
+    
+    /* 버튼 터치 영역 확대 */
+    .btn {
+      padding: 10px 16px;
+      font-size: 14px;
+      min-height: 44px;
+    }
+    
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      font-size: 16px;
+    }
+    
+    /* 평가 폼 간격 조정 */
+    .eval-form {
+      padding: 16px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    /* 별점 버튼 크기 */
+    .star-rating button {
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+    }
+    
+    /* 헤더 간소화 */
+    .header {
+      padding: 0 16px;
+    }
+    
+    #projectTitle {
+      min-width: 200px;
+      font-size: 13px;
+    }
+  }
+  
+  @media (max-width: 767px) {
+    /* 모바일 세로: 1단 레이아웃 */
+    .content {
+      flex-direction: column;
+    }
+    
+    .pdf-viewer,
+    .eval-view,
+    .dashboard-view,
+    .settings-view {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .tablet-nav select {
+      font-size: 13px;
+    }
+    
+    .tablet-nav-btn {
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -726,6 +886,15 @@
 
 <!-- 메인 -->
 <div class="main">
+  <!-- 태블릿 전용 네비게이션 (768px~1023px에서만 표시) -->
+  <div class="tablet-nav">
+    <select id="tabletApplicantSelect" onchange="selectApplicantFromTablet(this.value)">
+      <option value="">지원자를 선택하세요</option>
+    </select>
+    <button class="tablet-nav-btn" onclick="navigatePrevApplicant()" id="tabletPrevBtn">◀ 이전</button>
+    <button class="tablet-nav-btn" onclick="navigateNextApplicant()" id="tabletNextBtn">다음 ▶</button>
+  </div>
+
   <!-- 사이드바 -->
   <div class="sidebar">
     <div class="sidebar-header">
@@ -1320,6 +1489,7 @@ function renderApplicantList() {
 
   if (visible.length === 0) {
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">평가할 지원자가 없습니다</div>';
+    updateTabletSelect(visible);
     return;
   }
 
@@ -1353,6 +1523,9 @@ function renderApplicantList() {
       </div>` : ''}
     </div>`;
   }).join('');
+  
+  // 태블릿 드롭다운 업데이트
+  updateTabletSelect(visible);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2859,6 +3032,71 @@ function openResultSheet() {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
   window.open(url, '_blank');
   showToast('결과 시트가 새 탭에서 열립니다', 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 태블릿 네비게이션
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateTabletSelect(visibleApplicants) {
+  const select = document.getElementById('tabletApplicantSelect');
+  if (!select) return;
+  
+  // 결시자 제외한 지원자만 표시
+  const activeApplicants = visibleApplicants.filter(a => !a.absent);
+  
+  select.innerHTML = '<option value="">지원자를 선택하세요</option>' +
+    activeApplicants.map(a => {
+      const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+      const myEval = currentUser ? evals.find(e => e.evaluatorName === currentUser.name) : null;
+      const status = myEval?.submitted ? ' ✅' : myEval ? ' 💾' : '';
+      return `<option value="${a.id}" ${currentApplicantId === a.id ? 'selected' : ''}>
+        ${a.num ? a.num + '. ' : ''}${a.name} (${JOB_LABELS[a.jobType]})${status}
+      </option>`;
+    }).join('');
+  
+  // 이전/다음 버튼 활성화 상태 업데이트
+  updateNavigationButtons(activeApplicants);
+}
+
+function updateNavigationButtons(visibleApplicants) {
+  const prevBtn = document.getElementById('tabletPrevBtn');
+  const nextBtn = document.getElementById('tabletNextBtn');
+  if (!prevBtn || !nextBtn) return;
+  
+  const activeApplicants = visibleApplicants.filter(a => !a.absent);
+  const currentIndex = activeApplicants.findIndex(a => a.id === currentApplicantId);
+  
+  prevBtn.disabled = currentIndex <= 0;
+  nextBtn.disabled = currentIndex >= activeApplicants.length - 1;
+}
+
+function selectApplicantFromTablet(id) {
+  if (!id) return;
+  selectApplicant(id);
+}
+
+function navigatePrevApplicant() {
+  let visible = appData.applicants.filter(a => !a.absent);
+  if (currentUser && currentUser.scope !== 'all') {
+    visible = visible.filter(a => a.deptGroup === currentUser.scope);
+  }
+  
+  const currentIndex = visible.findIndex(a => a.id === currentApplicantId);
+  if (currentIndex > 0) {
+    selectApplicant(visible[currentIndex - 1].id);
+  }
+}
+
+function navigateNextApplicant() {
+  let visible = appData.applicants.filter(a => !a.absent);
+  if (currentUser && currentUser.scope !== 'all') {
+    visible = visible.filter(a => a.deptGroup === currentUser.scope);
+  }
+  
+  const currentIndex = visible.findIndex(a => a.id === currentApplicantId);
+  if (currentIndex >= 0 && currentIndex < visible.length - 1) {
+    selectApplicant(visible[currentIndex + 1].id);
+  }
 }
 
 
