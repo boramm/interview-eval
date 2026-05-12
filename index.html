@@ -2581,6 +2581,55 @@ ${allPages}
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 데이터 내보내기/가져오기/초기화
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function exportData() {
+  const data = JSON.stringify(appData, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `면접평가_백업_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('백업 파일이 다운로드되었습니다', 'success');
+}
+
+function importData() {
+  document.getElementById('importFile').click();
+}
+
+function doImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const loaded = JSON.parse(ev.target.result);
+      if (!confirm('현재 데이터를 덮어쓰고 백업 파일을 불러오시겠어요?')) return;
+      appData = loaded;
+      saveToStorage();
+      renderApplicantList();
+      updateDashboard();
+      showToast('백업이 복원되었습니다', 'success');
+    } catch(err) {
+      showToast('파일을 읽을 수 없습니다', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('정말 모든 데이터(지원자/평가/비고)를 삭제하시겠어요?\n이 작업은 되돌릴 수 없습니다.')) return;
+  if (!confirm('한 번 더 확인합니다. 정말 초기화하시겠어요?')) return;
+  localStorage.removeItem('interviewApp');
+  // PDF 데이터도 삭제
+  Object.keys(localStorage).filter(k => k.startsWith('pdf_')).forEach(k => localStorage.removeItem(k));
+  showToast('전체 데이터가 삭제되었습니다', 'success');
+  setTimeout(() => location.reload(), 1000);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 토스트
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let toastTimer;
