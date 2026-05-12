@@ -922,11 +922,46 @@ function doGet(e) {
       </div>
 
       <div class="settings-card">
+        <div class="settings-card-title">📋 지원자 정보 관리</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          CSV 양식을 다운로드하여 작성 후 업로드하면 지원자 정보가 일괄 반영됩니다.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="downloadApplicantTemplate()">📥 지원자 양식 다운로드</button>
+          <button class="btn btn-primary btn-sm" onclick="uploadApplicantData()">📤 지원자 데이터 업로드</button>
+        </div>
+        <input type="file" id="applicantFile" accept=".csv" style="display:none" onchange="handleApplicantUpload(event)">
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">👥 평가위원 정보 관리</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          CSV 양식을 다운로드하여 작성 후 업로드하면 평가위원 정보가 일괄 반영됩니다.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="downloadEvaluatorTemplate()">📥 평가위원 양식 다운로드</button>
+          <button class="btn btn-primary btn-sm" onclick="uploadEvaluatorData()">📤 평가위원 데이터 업로드</button>
+        </div>
+        <input type="file" id="evaluatorFile" accept=".csv" style="display:none" onchange="handleEvaluatorUpload(event)">
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">📊 연동 시트 바로가기</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          평가 결과가 실시간으로 저장되는 Google Sheets를 확인하세요.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:#34A853;color:white;border:none" onclick="openResultSheet()">📊 결과 시트 열기</button>
+          <span id="sheetStatus" style="font-size:12px;color:var(--gray-500);display:flex;align-items:center"></span>
+        </div>
+      </div>
+
+      <div class="settings-card">
         <div class="settings-card-title">⚠️ 데이터 관리</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 전체 데이터 JSON 백업</button>
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="importData()">📤 백업 복원</button>
-          <button class="btn btn-red btn-sm" onclick="clearAllData()">🗑️ 전체 초기화</button>
+          <button class="btn btn-red btn-sm" onclick="clearAllData()">🗑️ 평가 데이터 초기화</button>
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
       </div>
@@ -2632,6 +2667,200 @@ function clearAllData() {
   updateDashboard();
   showToast('평가 데이터가 초기화되었습니다', 'success');
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 지원자 CSV 관리
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function downloadApplicantTemplate() {
+  const headers = '가번호,성명,부서,직군,보훈여부,구글드라이브링크\n';
+  const example = 'SYU-001,홍길동,생활건강증진원 금연금주클리닉,사무,no,https://drive.google.com/file/d/xxx/preview\n';
+  const csv = headers + example;
+  
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '지원자_양식.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('지원자 양식이 다운로드되었습니다', 'success');
+}
+
+function uploadApplicantData() {
+  document.getElementById('applicantFile').click();
+}
+
+function handleApplicantUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const text = ev.target.result;
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      
+      if (lines.length < 2) {
+        showToast('파일에 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      // 헤더 제외
+      const dataLines = lines.slice(1);
+      const newApplicants = [];
+      
+      dataLines.forEach((line, idx) => {
+        const cols = line.split(',').map(c => c.trim());
+        if (cols.length < 4) return; // 최소 4개 컬럼 필요
+        
+        const [num, name, department, jobTypeStr, bohunStr, driveUrl] = cols;
+        
+        // 직군 매핑
+        let jobType = 'office';
+        if (jobTypeStr === '연구' || jobTypeStr === '연구직') jobType = 'research';
+        else if (jobTypeStr === '노무' || jobTypeStr === '노무직') jobType = 'labor';
+        
+        // 보훈 여부
+        const bohun = (bohunStr === 'yes' || bohunStr === 'Y' || bohunStr === '예' || bohunStr === '보훈') ? 'yes' : 'no';
+        
+        newApplicants.push({
+          id: 'a' + String(Date.now() + idx).slice(-6),
+          num: num || '',
+          name: name || '',
+          department: department || '',
+          deptGroup: department.split(' ').pop() || department, // 마지막 단어를 부서명으로
+          jobType,
+          bohun,
+          driveUrl: driveUrl || ''
+        });
+      });
+      
+      if (newApplicants.length === 0) {
+        showToast('유효한 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      if (!confirm(`${newApplicants.length}명의 지원자를 불러옵니다.\n기존 지원자 목록을 덮어쓰시겠어요?`)) return;
+      
+      appData.applicants = newApplicants;
+      saveToStorage();
+      renderApplicantList();
+      updateDashboard();
+      showToast(`✅ ${newApplicants.length}명의 지원자 정보가 반영되었습니다`, 'success');
+      
+    } catch(err) {
+      console.error(err);
+      showToast('파일을 읽을 수 없습니다. CSV 형식을 확인해주세요.', 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = ''; // 같은 파일 재선택 가능하도록
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 평가위원 CSV 관리
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function downloadEvaluatorTemplate() {
+  const headers = '성명,사번,평가범위\n';
+  const example = '이보람,005923,관리자\n홍길동,000123,전체\n김철수,000456,생활건강증진원\n';
+  const csv = headers + example;
+  
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '평가위원_양식.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('평가위원 양식이 다운로드되었습니다', 'success');
+}
+
+function uploadEvaluatorData() {
+  document.getElementById('evaluatorFile').click();
+}
+
+function handleEvaluatorUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const text = ev.target.result;
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      
+      if (lines.length < 2) {
+        showToast('파일에 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      // 헤더 제외
+      const dataLines = lines.slice(1);
+      const newEvaluators = [];
+      
+      dataLines.forEach(line => {
+        const cols = line.split(',').map(c => c.trim());
+        if (cols.length < 3) return;
+        
+        const [name, employeeId, scopeStr] = cols;
+        
+        // 평가범위 매핑
+        let scope = 'all';
+        let isAdmin = false;
+        
+        if (scopeStr === '관리자') {
+          isAdmin = true;
+          scope = 'all';
+        } else if (scopeStr === '전체' || scopeStr === 'all') {
+          scope = 'all';
+        } else {
+          scope = scopeStr; // 부서명
+        }
+        
+        newEvaluators.push({
+          name: name || '',
+          employeeId: employeeId || '',
+          scope,
+          isAdmin
+        });
+      });
+      
+      if (newEvaluators.length === 0) {
+        showToast('유효한 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      if (!confirm(`${newEvaluators.length}명의 평가위원을 불러옵니다.\n기존 평가위원 목록을 덮어쓰시겠어요?`)) return;
+      
+      appData.evaluators = newEvaluators;
+      saveToStorage();
+      showToast(`✅ ${newEvaluators.length}명의 평가위원 정보가 반영되었습니다`, 'success');
+      
+      // 현재 로그인 사용자가 새 목록에 없으면 로그아웃
+      if (currentUser && !newEvaluators.find(e => e.name === currentUser.name)) {
+        currentUser = null;
+        showTab('eval');
+      }
+      
+    } catch(err) {
+      console.error(err);
+      showToast('파일을 읽을 수 없습니다. CSV 형식을 확인해주세요.', 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 연동 시트 바로가기
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openResultSheet() {
+  const SHEET_ID = '18dxEd1Ie8LAEVSAMfgCM0Kks-TqJnq6nbTz0KW5Q_-0';
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+  window.open(url, '_blank');
+  showToast('결과 시트가 새 탭에서 열립니다', 'success');
+}
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 토스트
