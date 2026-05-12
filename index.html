@@ -2620,13 +2620,17 @@ function doImport(e) {
 }
 
 function clearAllData() {
-  if (!confirm('정말 모든 데이터(지원자/평가/비고)를 삭제하시겠어요?\n이 작업은 되돌릴 수 없습니다.')) return;
-  if (!confirm('한 번 더 확인합니다. 정말 초기화하시겠어요?')) return;
-  localStorage.removeItem('interviewApp');
-  // PDF 데이터도 삭제
-  Object.keys(localStorage).filter(k => k.startsWith('pdf_')).forEach(k => localStorage.removeItem(k));
-  showToast('전체 데이터가 삭제되었습니다', 'success');
-  setTimeout(() => location.reload(), 1000);
+  if (!confirm('평가 데이터(점수/의견)를 모두 삭제하시겠어요?\n지원자와 평가위원 정보는 유지됩니다.')) return;
+  if (!confirm('한 번 더 확인합니다. 평가 데이터를 초기화하시겠어요?')) return;
+  
+  // 평가 데이터와 비고만 초기화
+  appData.evaluations = [];
+  appData.remarks = {};
+  
+  saveToStorage();
+  renderApplicantList();
+  updateDashboard();
+  showToast('평가 데이터가 초기화되었습니다', 'success');
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
