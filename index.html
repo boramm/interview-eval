@@ -1316,17 +1316,17 @@ function viewDashboardOnly() {
 function doLogin() {
   const id = document.getElementById('loginId').value.trim();
   const pw = document.getElementById('loginPw').value.trim();
-  const evaluator = EVALUATORS.find(e => e.id === id && e.id === pw);
+  const evaluator = EVALUATORS.find(e => e.employeeId === id && e.employeeId === pw);
   if (!evaluator) {
     document.getElementById('loginError').style.display = 'block';
     return;
   }
   currentUser = evaluator;
-  sessionStorage.setItem('currentUserId', evaluator.id);
+  sessionStorage.setItem('currentUserId', evaluator.employeeId);
   currentApplicantId = null;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('userName').textContent = evaluator.name;
-  document.getElementById('userTitle').textContent = evaluator.title;
+  document.getElementById('userTitle').textContent = evaluator.employeeId;
   // PDF 패널 초기화
   document.getElementById('pdfViewer').style.display = 'none';
   document.getElementById('pdfViewer').src = '';
@@ -1427,12 +1427,12 @@ function init() {
   // 새로고침 후 자동 로그인 복원
   const savedId = sessionStorage.getItem('currentUserId');
   if (savedId) {
-    const evaluator = EVALUATORS.find(e => e.id === savedId);
+    const evaluator = EVALUATORS.find(e => e.employeeId === savedId);
     if (evaluator) {
       currentUser = evaluator;
       document.getElementById('loginOverlay').style.display = 'none';
       document.getElementById('userName').textContent = evaluator.name;
-      document.getElementById('userTitle').textContent = evaluator.title;
+      document.getElementById('userTitle').textContent = evaluator.employeeId;
       renderApplicantList();
     }
   }
