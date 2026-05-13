@@ -1086,26 +1086,38 @@ function saveData(data) {
     data.department || '',
     data.evaluatorName || '',
     data.evalDate || '',
-    data.score1 || 0,
-    data.score2 || 0,
-    data.score3 || 0,
-    data.score4 || 0,
-    data.score5 || 0,
-    data.totalScore || 0,
-    data.bohunPoint || 0,
-    data.finalScore || 0,
+    Number(data.score1) || 0,
+    Number(data.score2) || 0,
+    Number(data.score3) || 0,
+    Number(data.score4) || 0,
+    Number(data.score5) || 0,
+    Number(data.totalScore) || 0,
+    Number(data.bohunPoint) || 0,
+    Number(data.finalScore) || 0,
     data.grade || '',
     data.comment || ''
   ]);
 }
 
+function getAllRows() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheets()[0];
+  return sheet.getDataRange().getValues();
+}
+
 function doGet(e) {
   try {
+    // 저장 요청: applicantName 파라미터가 있으면 저장
     if (e.parameter && e.parameter.applicantName) {
       saveData(e.parameter);
+      return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
     }
-  } catch(err) {}
-  return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
+    // 조회 요청: rows 반환
+    var rows = getAllRows();
+    return ContentService.createTextOutput(JSON.stringify({rows: rows})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 function doPost(e) {
@@ -1308,11 +1320,10 @@ function sendToGAS(url, data) {
     const params = new URLSearchParams();
     Object.entries(data).forEach(([k, v]) => params.append(k, v ?? ''));
     const fullUrl = url + '?' + params.toString();
-    // img 태그로 GET 요청 — CSP frame-ancestors 우회
-    const img = new Image();
-    img.src = fullUrl;
-    img.onload = () => console.log('GAS 전송 완료');
-    img.onerror = () => console.log('GAS 전송 완료 (오류응답은 정상)');
+    // fetch + no-cors: GAS의 리다이렉트를 잘 따라감 (응답은 못 읽지만 전송은 성공)
+    fetch(fullUrl, { method: 'GET', mode: 'no-cors' })
+      .then(() => console.log('GAS 전송 완료'))
+      .catch(e => console.log('GAS 전송 시도 (응답 확인 불가):', e));
   } catch(e) {
     console.log('GAS 전송 오류:', e);
   }
