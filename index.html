@@ -2004,7 +2004,7 @@ function updateDashboard() {
     if (th) th.textContent = evalNames[i] || '';
   }
 
-  // 전체 지원자 순위표 (미평가 포함)
+  // 전체 지원자 순위표 (평가 진행된 지원자만, 결시 포함)
   const allRanked = appData.applicants.map(a => {
     const evals = appData.evaluations.filter(e => e.applicantId === a.id);
     const avgScore = evals.length > 0 ? evals.reduce((s,e) => s + e.subTotal, 0) / evals.length : 0;
@@ -2024,9 +2024,9 @@ function updateDashboard() {
     if (a.absent && !b.absent) return 1;
     if (!a.absent && b.absent) return -1;
     return b.finalScore - a.finalScore;
-  });
+  }).filter(a => a.evalCount > 0); // 평가 진행된 지원자만 (결시 포함, 미평가 제외)
 
-  // 순위 부여 (결시/미평가 제외)
+  // 순위 부여 (결시 제외)
   let rankCounter = 0;
   const totalCols = evalNames.length + 7; // 순위+부서+가번호+성명+직군+합계+평균+보훈+최종+비고
 
@@ -2764,7 +2764,7 @@ function generateSignaturePrint(evaluatorName, deptFilter) {
 
   function buildPage(evName, items) {
     const evalInfo = EVALUATORS.find(e => e.name === evName);
-    const evalTitle = evalInfo ? evalInfo.title : '';
+    const evalTitle = evalInfo ? `사번: ${evalInfo.employeeId}` : '';
     const deptName = items[0]?.applicant?.department || '';
     // 결시 제외
     const validItems = items.filter(({ev}) => !ev.isAbsent);
@@ -2865,7 +2865,7 @@ function generateSignaturePrint(evaluatorName, deptFilter) {
       </table>
       <div style="text-align:center;font-size:13px;margin:20px 0 14px;color:#374151">${today}</div>
       <div style="text-align:right;font-size:14px;padding-right:40px">
-        면접위원 : <strong>${evName}</strong>&nbsp;&nbsp;(${evalTitle})
+        면접위원 : <strong>${evName}</strong>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(인)
       </div>
     </div>`;
