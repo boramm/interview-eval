@@ -1225,15 +1225,14 @@ function doGet(e) {
 // 평가위원 계정 (사번 = 아이디 & 비밀번호)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const EVALUATORS = [
-  { id: '005923', name: '이보람',  title: '총무인사팀',                 scope: 'all' },
-  { id: '000163', name: '김성완',  title: '사무처장',                   scope: 'all' },
-  { id: '000206', name: '김현호',  title: '사무처 총무인사팀장',         scope: 'all' },
-  { id: '000218', name: '최경천',  title: '교목처장',                   scope: 'all' },
-  { id: '000173', name: '한숙정',  title: '생활건강증진원장',            scope: '생활건강증진원' },
-  { id: '000905', name: '이금선',  title: '금연금주클리닉센터장',        scope: '생활건강증진원' },
-  { id: '000326', name: '이승원',  title: '교육혁신원장',               scope: '교육인증센터' },
-  { id: '000122', name: '신동석',  title: '교육인증센터장',              scope: '교육인증센터' },
-  { id: '000311', name: '전규성',  title: '사무처 시설관리팀 미화 계장', scope: '시설관리팀' },
+  { name: '김성완', employeeId: '000163', scope: 'all', isAdmin: false },
+  { name: '김현호', employeeId: '000206', scope: 'all', isAdmin: false },
+  { name: '한숙정', employeeId: '000173', scope: '생활건강증진원', isAdmin: false },
+  { name: '이금선', employeeId: '000905', scope: '생활건강증진원', isAdmin: false },
+  { name: '이승원', employeeId: '000326', scope: '교육인증센터', isAdmin: false },
+  { name: '신동석', employeeId: '000122', scope: '교육인증센터', isAdmin: false },
+  { name: '전규성', employeeId: '000311', scope: '시설관리팀', isAdmin: false },
+  { name: '이보람', employeeId: '005923', scope: 'all', isAdmin: true },
 ];
 
 const DEFAULT_APPLICANTS = [
