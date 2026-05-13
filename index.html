@@ -1595,6 +1595,13 @@ function renderApplicantList() {
 function selectApplicant(id) {
   const a = appData.applicants.find(x => x.id === id);
   if (!a || a.absent) return; // 결시 차단
+  
+  // 다른 탭에 있으면 면접평가 탭으로 자동 전환
+  const evalView = document.getElementById('evalView');
+  if (evalView && evalView.style.display !== 'flex') {
+    showTab('eval');
+  }
+  
   currentApplicantId = id;
   renderApplicantList();
 
