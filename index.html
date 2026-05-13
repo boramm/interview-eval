@@ -2763,8 +2763,6 @@ function generateSignaturePrint(evaluatorName, deptFilter) {
   if (evaluatorList.length === 0) { showToast('출력할 데이터가 없습니다.', 'error'); return; }
 
   function buildPage(evName, items) {
-    const evalInfo = EVALUATORS.find(e => e.name === evName);
-    const evalTitle = evalInfo ? `사번: ${evalInfo.employeeId}` : '';
     const deptName = items[0]?.applicant?.department || '';
     // 결시 제외
     const validItems = items.filter(({ev}) => !ev.isAbsent);
