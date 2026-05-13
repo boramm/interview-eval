@@ -1075,17 +1075,9 @@
             <strong>③ 아래 코드 전체 붙여넣기 (기존 코드 삭제 후)</strong><br>
             <div style="background:#1e1e1e;color:#d4d4d4;border-radius:6px;padding:12px;margin:8px 0;font-family:monospace;font-size:11px;white-space:pre-wrap">var SHEET_ID = '18dxEd1Ie8LAEVSAMfgCM0Kks-TqJnq6nbTz0KW5Q_-0';
 
-function doPost(e) {
+function saveData(data) {
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheets()[0];
-  var data = {};
-  try {
-    if (e.parameter && e.parameter.data) {
-      data = JSON.parse(e.parameter.data);
-    } else if (e.postData) {
-      data = JSON.parse(e.postData.contents);
-    }
-  } catch(err) {}
   sheet.appendRow([
     new Date(),
     data.projectTitle || '',
@@ -1105,11 +1097,28 @@ function doPost(e) {
     data.grade || '',
     data.comment || ''
   ]);
-  return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON);
+  try {
+    if (e.parameter && e.parameter.applicantName) {
+      saveData(e.parameter);
+    }
+  } catch(err) {}
+  return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var data = {};
+  try {
+    if (e.parameter && e.parameter.data) {
+      data = JSON.parse(e.parameter.data);
+    } else if (e.postData) {
+      data = JSON.parse(e.postData.contents);
+    }
+  } catch(err) {}
+  saveData(data);
+  return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
 }</div>
             <strong>④ 배포</strong><br>
             배포 → 새 배포 → 유형: 웹 앱 → 액세스: 모든 사용자 → 배포<br><br>
@@ -1500,12 +1509,12 @@ function showTab(tab) {
     updateDashboard();
     // 관리자만 내부기안용 버튼 표시
     const finalBtn = document.getElementById('finalReportBtn');
-    if (finalBtn) finalBtn.style.display = (currentUser && currentUser.id === '005923') ? 'inline-flex' : 'none';
+    if (finalBtn) finalBtn.style.display = (currentUser && currentUser.employeeId === '005923') ? 'inline-flex' : 'none';
   } else if (tab === 'settings') {
     document.getElementById('tab-settings').classList.add('active');
     document.getElementById('settingsView').classList.add('active');
     // 관리자만 결시 관리 표시
-    const isAdmin = currentUser && currentUser.id === '005923';
+    const isAdmin = currentUser && currentUser.employeeId === '005923';
     document.getElementById('absenceCard').style.display = isAdmin ? 'block' : 'none';
     if (isAdmin) renderAbsenceList();
   }
@@ -2607,7 +2616,7 @@ async function syncFromSheets() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function printSignature() {
   if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
-  const isAdmin = currentUser.id === '005923' || currentUser.id === '000206';
+  const isAdmin = currentUser.employeeId === '005923' || currentUser.employeeId === '000206';
   if (isAdmin) {
     openSignatureModal();
   } else {
