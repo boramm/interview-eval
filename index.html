@@ -984,9 +984,9 @@
         </div>
 
         <div class="eval-footer" id="evalFooter" style="display:none">
-          <button class="save-btn" id="absentBtn" onclick="markAbsent()" style="flex:1;background:#dc2626;font-size:13px">🚫 결시</button>
-          <button class="save-btn" id="saveBtn" onclick="saveEvaluation()" style="flex:2">① 💾 평가 결과 저장</button>
-          <button class="save-btn" id="submitBtn" onclick="openSubmitModal()" style="flex:1;background:var(--green);font-size:13px">② ✅ 최종 제출</button>
+          <button class="save-btn" id="absentBtn" onclick="markAbsent()" style="flex:1;background:#dc2626;font-size:13px">결시</button>
+          <button class="save-btn" id="saveBtn" onclick="saveEvaluation()" style="flex:2">① 임시저장</button>
+          <button class="save-btn" id="submitBtn" onclick="openSubmitModal()" style="flex:1;background:var(--green);font-size:13px">② 최종제출</button>
         </div>
       </div>
     </div>
@@ -1942,10 +1942,10 @@ async function saveEvaluation() {
 
   // 버튼 피드백
   const btn = document.getElementById('saveBtn');
-  btn.textContent = '✅ 저장 완료!';
+  btn.textContent = '저장 완료!';
   btn.classList.add('saved');
   setTimeout(() => {
-    btn.textContent = '① 💾 평가 결과 저장';
+    btn.textContent = '① 임시저장';
     btn.classList.remove('saved');
     // 폼 초기화
     renderEvalForm(appData.applicants.find(x => x.id === currentApplicantId));
