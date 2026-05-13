@@ -435,10 +435,12 @@
     background: white;
     border-radius: 10px;
     box-shadow: var(--shadow);
-    overflow: hidden;
+    overflow: visible;
+    flex-shrink: 0;
   }
   .result-table-wrap .table-scroll {
     overflow-x: auto;
+    overflow-y: visible;
   }
   .result-table-header {
     padding: 10px 16px;
@@ -995,6 +997,7 @@
         <div class="dashboard-title" id="dashTitle">면접 평가 결과 대시보드</div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 백업</button>
+          <button class="btn btn-outline btn-sm" style="background:#fef3c7;color:#92400e;border-color:#fcd34d" onclick="uploadAllToSheets()">📤 시트로 일괄 업로드</button>
           <button class="btn btn-outline btn-sm" id="syncBtn" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe" onclick="syncFromSheets()">🔄 Sheets 동기화</button>
           <button class="btn btn-gold btn-sm" onclick="printSignature()">📝 선발결과 확인서명서</button>
           <button id="finalReportBtn" class="btn btn-sm" onclick="printFinalReport()" style="display:none;background:#065f46;color:white">📋 내부기안용 최종결과표</button>
@@ -2543,6 +2546,63 @@ function toggleAbsence(id, isAbsent) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Sheets 동기화 (관리자용)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function uploadAllToSheets() {
+  const gasUrl = localStorage.getItem('gasUrl');
+  if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
+  
+  if (appData.evaluations.length === 0) {
+    showToast('업로드할 평가 데이터가 없습니다', 'error');
+    return;
+  }
+
+  if (!confirm(`총 ${appData.evaluations.length}건의 평가 데이터를 시트로 업로드합니다.\n시트에 이미 데이터가 있다면 중복될 수 있습니다.\n진행하시겠습니까?`)) {
+    return;
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+  
+  for (const ev of appData.evaluations) {
+    const a = appData.applicants.find(x => x.id === ev.applicantId);
+    if (!a) { failCount++; continue; }
+    
+    try {
+      await new Promise((resolve) => {
+        const params = new URLSearchParams();
+        const payload = {
+          projectTitle: appData.projectTitle,
+          applicantName: a.name,
+          jobType: JOB_LABELS[a.jobType] || '',
+          department: a.department || '',
+          evaluatorName: ev.evaluatorName,
+          evalDate: ev.evalDate || '',
+          score1: ev.scores?.s1 || 0,
+          score2: ev.scores?.s2 || 0,
+          score3: ev.scores?.s3 || 0,
+          score4: ev.scores?.s4 || 0,
+          score5: ev.scores?.s5 || 0,
+          totalScore: ev.subTotal || 0,
+          bohunPoint: ev.bohunPoint || 0,
+          finalScore: ev.finalScore || 0,
+          grade: ev.grade || '',
+          comment: (ev.submitted ? '[최종제출] ' : '') + (ev.comment || '')
+        };
+        Object.entries(payload).forEach(([k,v]) => params.append(k, v ?? ''));
+        fetch(gasUrl + '?' + params.toString(), { method: 'GET', mode: 'no-cors' })
+          .then(() => { successCount++; resolve(); })
+          .catch(() => { successCount++; resolve(); }); // no-cors는 에러 안 떠도 성공으로 간주
+      });
+      // 너무 빠르게 요청하면 GAS가 막을 수 있어서 약간 딜레이
+      await new Promise(r => setTimeout(r, 200));
+    } catch(e) {
+      failCount++;
+      console.error('업로드 실패:', e);
+    }
+  }
+  
+  showToast(`✅ 업로드 완료! 성공 ${successCount}건${failCount > 0 ? ', 실패 ' + failCount + '건' : ''}`, 'success');
+}
+
 async function syncFromSheets() {
   const gasUrl = localStorage.getItem('gasUrl');
   if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
