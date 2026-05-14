@@ -2378,9 +2378,25 @@ function printFinalReport() {
     });
   });
 
+  // 부서별 선발 인원 설정 (기본 1명, 시설관리팀 2명)
+  const HIRE_COUNT = {
+    '사무처 시설관리팀 미화': 2,
+  };
+
   // 부서별 순위표 생성
   function buildSection(dept, applicants) {
-    const deptResults = applicants.map(a => allResults.find(r => r.id === a.id));
+    const hireCount = HIRE_COUNT[dept] || 1;
+
+    // 결과 가져오고 순위순으로 정렬 (결시는 맨 뒤)
+    const deptResults = applicants
+      .map(a => allResults.find(r => r.id === a.id))
+      .sort((a, b) => {
+        if (a.absent && !b.absent) return 1;
+        if (!a.absent && b.absent) return -1;
+        if (!a.rank && b.rank) return 1;
+        if (a.rank && !b.rank) return -1;
+        return (a.rank || 99) - (b.rank || 99);
+      });
 
     // 이 부서 평가한 위원만
     const deptEvals = evaluatorNames.filter(evName =>
@@ -2396,11 +2412,14 @@ function printFinalReport() {
     ).join('');
 
     const rows = deptResults.map(a => {
+      const isSelected = !a.absent && a.rank && a.rank <= hireCount;
       const rankStr = a.absent
         ? `<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">결시</span>`
-        : a.rank === 1
-          ? `<span style="background:#c9a84c;color:#1a2744;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:700">1위 ★</span>`
-          : `<span style="color:#374151;font-weight:600;font-size:11px">${a.rank}위</span>`;
+        : !a.rank
+          ? `<span style="color:#9ca3af;font-size:11px">미평가</span>`
+          : isSelected
+            ? `<span style="background:#c9a84c;color:#1a2744;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:700">${a.rank}위 ★</span>`
+            : `<span style="color:#374151;font-weight:600;font-size:11px">${a.rank}위</span>`;
 
       const scoreCells = deptEvals.map(evName => {
         const score = a.scores[evName];
@@ -2408,7 +2427,7 @@ function printFinalReport() {
         return `<td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;font-size:12px">${score !== null ? score : '—'}</td>`;
       }).join('');
 
-      const rowStyle = a.absent ? 'background:#fef2f2' : a.rank === 1 ? 'background:#fefce8' : '';
+      const rowStyle = a.absent ? 'background:#fef2f2' : isSelected ? 'background:#fefce8' : '';
 
       return `<tr style="${rowStyle}">
         <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center">${rankStr}</td>
@@ -2424,14 +2443,18 @@ function printFinalReport() {
       </tr>`;
     }).join('');
 
-    // 1위 선발자
-    const winner = deptResults.filter(a=>!a.absent&&a.evalCount>0).sort((a,b)=>b.avg-a.avg)[0];
+    // 선발자 (hireCount명까지)
+    const sortedValid = deptResults.filter(a => !a.absent && a.rank);
+    const winners = sortedValid.filter(a => a.rank <= hireCount);
+    const winnerText = winners.length > 0
+      ? winners.map(w => `${w.name}(${w.avg}점)`).join(', ')
+      : '';
 
     return `
       <div style="margin-bottom:18px">
         <div style="background:#1a2744;padding:6px 12px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
           <span style="color:#e8c97a;font-weight:700;font-size:13px">${dept} 부문</span>
-          ${winner ? `<span style="background:#e8c97a;color:#1a2744;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700">최종 선발: ${winner.name} (${winner.avg}점)</span>` : ''}
+          ${winnerText ? `<span style="background:#e8c97a;color:#1a2744;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700">최종 선발 ${hireCount}명: ${winnerText}</span>` : ''}
         </div>
         <table style="width:100%;border-collapse:collapse">
           <thead>
