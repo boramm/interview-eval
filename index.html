@@ -8,6 +8,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>계약직원 면접 평가 시스템</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCa9KHSlThpYcpgXHnwI6J6UkA-Q-vCzpg",
+    authDomain: "syu-interview.firebaseapp.com",
+    databaseURL: "https://syu-interview-default-rtdb.firebaseio.com",
+    projectId: "syu-interview",
+    storageBucket: "syu-interview.firebasestorage.app",
+    messagingSenderId: "90039452918",
+    appId: "1:90039452918:web:f1143230ab17a65b8f58d7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // 전역으로 노출
+  window._fbDb = db;
+  window._fbRef = ref;
+  window._fbSet = set;
+  window._fbGet = get;
+  window._fbOnValue = onValue;
+  window._fbUpdate = update;
+  window._fbRemove = remove;
+  window._fbReady = true;
+
+  // Firebase 준비 완료 이벤트
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
 <style>
   :root {
     --navy: #1a2744;
@@ -903,6 +933,7 @@
   </div>
   <div class="header-right" style="gap:12px">
     <div id="userInfo" style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px">
+      <span id="fbStatus" style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5)">🔥 연결 중...</span>
       <span id="userName" style="font-weight:600;color:var(--gold-light)"></span>
       <span id="userTitle" style="opacity:0.7"></span>
     </div>
@@ -998,7 +1029,7 @@
         <div style="display:flex;gap:8px">
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 백업</button>
           <button class="btn btn-outline btn-sm" style="background:#fef3c7;color:#92400e;border-color:#fcd34d" onclick="uploadAllToSheets()">📤 시트로 일괄 업로드</button>
-          <button class="btn btn-outline btn-sm" id="syncBtn" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe" onclick="syncFromSheets()">🔄 Sheets 동기화</button>
+          <button class="btn btn-outline btn-sm" id="syncBtn" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa" onclick="loadFromFirebase()">🔥 Firebase 새로고침</button>
           <button class="btn btn-gold btn-sm" onclick="printSignature()">📝 선발결과 확인서명서</button>
           <button id="finalReportBtn" class="btn btn-sm" onclick="printFinalReport()" style="display:none;background:#065f46;color:white">📋 내부기안용 최종결과표</button>
           <button class="btn btn-navy btn-sm" onclick="window.print()">🖨️ 결과 인쇄</button>
@@ -1443,7 +1474,7 @@ function doFinalSubmit() {
 // 초기화
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function init() {
-  loadFromStorage();
+  loadFromStorage(); // localStorage에서 빠르게 먼저 로드
   document.getElementById('projectTitle').value = appData.projectTitle;
   const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
   if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', DEFAULT_GAS_URL);
@@ -1451,6 +1482,9 @@ function init() {
   renderApplicantList();
   updateDashboard();
   document.getElementById('printDate').textContent = '출력일시: ' + new Date().toLocaleString('ko-KR');
+
+  // Firebase 실시간 리스너 시작 (다른 위원 데이터 즉시 반영)
+  startFirebaseListener();
 
   // 제목 변경 감지
   document.getElementById('projectTitle').addEventListener('input', function() {
@@ -1473,37 +1507,132 @@ function init() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 저장/로드 (localStorage)
+// Firebase 저장/로드 (실시간 DB)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const FB_PATH = 'interview_2026_07'; // 회차별로 경로 구분
+
 function saveToStorage() {
-  // PDF 데이터는 용량이 커서 별도 저장
-  const saveData = JSON.parse(JSON.stringify(appData));
-  saveData.applicants = saveData.applicants.map(a => {
-    const copy = {...a};
-    // pdfData는 별도 key로 저장
-    if (copy.pdfData) {
-      localStorage.setItem('pdf_' + copy.id, copy.pdfData);
-      delete copy.pdfData;
-    }
-    return copy;
-  });
-  localStorage.setItem('interviewApp', JSON.stringify(saveData));
+  // localStorage 백업 (오프라인 대비)
+  try { localStorage.setItem('interviewApp', JSON.stringify(appData)); } catch(e) {}
+
+  // Firebase 저장
+  if (!window._fbReady) return;
+  const db = window._fbDb;
+  const ref = window._fbRef;
+  const set = window._fbSet;
+
+  // evaluations만 저장 (applicants는 코드에 내장)
+  const savePayload = {
+    evaluations: appData.evaluations,
+    remarks: appData.remarks || {},
+    projectTitle: appData.projectTitle,
+    absences: appData.applicants
+      .filter(a => a.absent)
+      .map(a => a.id)
+  };
+
+  set(ref(db, FB_PATH), savePayload)
+    .catch(e => console.error('Firebase 저장 오류:', e));
 }
 
 function loadFromStorage() {
+  // 우선 localStorage에서 빠르게 로드 (Firebase 응답 전 화면 표시)
   const raw = localStorage.getItem('interviewApp');
   if (raw) {
     try {
       const loaded = JSON.parse(raw);
-      // 평가/비고는 항상 불러오기
       if (loaded.evaluations) appData.evaluations = loaded.evaluations;
       if (loaded.remarks) appData.remarks = loaded.remarks;
       if (loaded.projectTitle) appData.projectTitle = loaded.projectTitle;
-      // 지원자는 localStorage에 있으면 사용, 없으면 기본 데이터 유지
-      if (loaded.applicants && loaded.applicants.length > 0) {
-        appData.applicants = loaded.applicants;
+    } catch(e) {}
+  }
+}
+
+// Firebase 실시간 리스너 — 다른 위원이 저장하면 즉시 반영
+function startFirebaseListener() {
+  if (!window._fbReady) {
+    window.addEventListener('firebaseReady', startFirebaseListener, { once: true });
+    return;
+  }
+  const db = window._fbDb;
+  const ref = window._fbRef;
+  const onValue = window._fbOnValue;
+
+  onValue(ref(db, FB_PATH), (snapshot) => {
+    const fbStatus = document.getElementById('fbStatus');
+    if (fbStatus) { fbStatus.textContent = '🔥 실시간 연결됨'; fbStatus.style.background = 'rgba(34,197,94,0.2)'; fbStatus.style.color = '#86efac'; }
+
+    const data = snapshot.val();
+    if (!data) return;
+
+    let changed = false;
+
+    // 평가 데이터 반영
+    if (data.evaluations) {
+      appData.evaluations = data.evaluations;
+      changed = true;
+    }
+    if (data.remarks) {
+      appData.remarks = data.remarks;
+      changed = true;
+    }
+    if (data.projectTitle) {
+      appData.projectTitle = data.projectTitle;
+      document.getElementById('projectTitle').value = data.projectTitle;
+    }
+    // 결시 반영 (관리자가 처리하면 모든 위원에게 즉시 반영)
+    if (data.absences && Array.isArray(data.absences)) {
+      appData.applicants.forEach(a => {
+        a.absent = data.absences.includes(a.id);
+      });
+      changed = true;
+    }
+
+    if (changed) {
+      // localStorage 백업
+      try { localStorage.setItem('interviewApp', JSON.stringify(appData)); } catch(e) {}
+      renderApplicantList();
+      updateDashboard();
+      // 현재 열린 폼이 결시 처리되면 패널 업데이트
+      if (currentApplicantId) {
+        const a = appData.applicants.find(x => x.id === currentApplicantId);
+        if (a?.absent) {
+          document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';
+          document.getElementById('evalFooter').style.display = 'none';
+        }
       }
-    } catch(e) { console.error('로드 오류', e); }
+    }
+  }, (error) => {
+    console.error('Firebase 리스너 오류:', error);
+  });
+}
+
+// Firebase에서 최신 데이터 1회 강제 로드
+async function loadFromFirebase() {
+  if (!window._fbReady) return;
+  const db = window._fbDb;
+  const ref = window._fbRef;
+  const get = window._fbGet;
+
+  try {
+    const snapshot = await get(ref(db, FB_PATH));
+    const data = snapshot.val();
+    if (!data) return;
+
+    if (data.evaluations) appData.evaluations = data.evaluations;
+    if (data.remarks) appData.remarks = data.remarks;
+    if (data.projectTitle) appData.projectTitle = data.projectTitle;
+    if (data.absences) {
+      appData.applicants.forEach(a => {
+        a.absent = data.absences.includes(a.id);
+      });
+    }
+    renderApplicantList();
+    updateDashboard();
+    showToast('✅ 데이터 로드 완료', 'success');
+  } catch(e) {
+    console.error('Firebase 로드 오류:', e);
+    showToast('Firebase 로드 실패 (오프라인 데이터 사용 중)', 'error');
   }
 }
 
