@@ -1390,6 +1390,8 @@ function doLogin() {
   }
   currentUser = evaluator;
   sessionStorage.setItem('currentUserId', evaluator.employeeId);
+  // 오래된 localStorage 캐시 제거 (Firebase가 단일 정답)
+  try { localStorage.removeItem('interviewApp'); } catch(e) {}
   currentApplicantId = null;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('userName').textContent = evaluator.name;
@@ -1514,10 +1516,7 @@ function init() {
 const FB_PATH = 'interview_2026_07'; // 회차별로 경로 구분
 
 function saveToStorage() {
-  // localStorage 백업 (오프라인 대비)
-  try { localStorage.setItem('interviewApp', JSON.stringify(appData)); } catch(e) {}
-
-  // Firebase 저장
+  // Firebase에만 저장 (localStorage는 사용 안 함)
   if (!window._fbReady) return;
   const db = window._fbDb;
   const ref = window._fbRef;
@@ -1538,16 +1537,11 @@ function saveToStorage() {
 }
 
 function loadFromStorage() {
-  // 우선 localStorage에서 빠르게 로드 (Firebase 응답 전 화면 표시)
-  const raw = localStorage.getItem('interviewApp');
-  if (raw) {
-    try {
-      const loaded = JSON.parse(raw);
-      if (loaded.evaluations) appData.evaluations = loaded.evaluations;
-      if (loaded.remarks) appData.remarks = loaded.remarks;
-      if (loaded.projectTitle) appData.projectTitle = loaded.projectTitle;
-    } catch(e) {}
-  }
+  // localStorage는 더 이상 신뢰하지 않음
+  // Firebase 리스너가 연결되면 즉시 덮어씀
+  // (빈 상태로 시작해서 Firebase 데이터로 채워지는 방식)
+  appData.evaluations = [];
+  appData.remarks = {};
 }
 
 // Firebase 실시간 리스너 — 다른 위원이 저장하면 즉시 반영
@@ -1565,43 +1559,46 @@ function startFirebaseListener() {
     if (fbStatus) { fbStatus.textContent = '🔥 실시간 연결됨'; fbStatus.style.background = 'rgba(34,197,94,0.2)'; fbStatus.style.color = '#86efac'; }
 
     const data = snapshot.val();
-    if (!data) return;
 
-    let changed = false;
+    // data가 null이면 전체 초기화 (삭제 이벤트)
+    if (!data) {
+      appData.evaluations = [];
+      appData.remarks = {};
+      appData.applicants.forEach(a => { a.absent = false; });
+      try { localStorage.removeItem('interviewApp'); } catch(e) {}
+      renderApplicantList();
+      updateDashboard();
+      return;
+    }
 
-    // 평가 데이터 반영
-    if (data.evaluations) {
-      appData.evaluations = data.evaluations;
-      changed = true;
-    }
-    if (data.remarks) {
-      appData.remarks = data.remarks;
-      changed = true;
-    }
+    // 평가 데이터 반영 (빈 배열도 반영)
+    appData.evaluations = Array.isArray(data.evaluations) ? data.evaluations : (data.evaluations ? data.evaluations : []);
+    appData.remarks = data.remarks || {};
+
     if (data.projectTitle) {
       appData.projectTitle = data.projectTitle;
       document.getElementById('projectTitle').value = data.projectTitle;
     }
-    // 결시 반영 (관리자가 처리하면 모든 위원에게 즉시 반영)
-    if (data.absences && Array.isArray(data.absences)) {
+
+    // 결시 반영
+    if (Array.isArray(data.absences)) {
       appData.applicants.forEach(a => {
         a.absent = data.absences.includes(a.id);
       });
-      changed = true;
+    } else {
+      appData.applicants.forEach(a => { a.absent = false; });
     }
 
-    if (changed) {
-      // localStorage 백업
-      try { localStorage.setItem('interviewApp', JSON.stringify(appData)); } catch(e) {}
-      renderApplicantList();
-      updateDashboard();
-      // 현재 열린 폼이 결시 처리되면 패널 업데이트
-      if (currentApplicantId) {
-        const a = appData.applicants.find(x => x.id === currentApplicantId);
-        if (a?.absent) {
-          document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';
-          document.getElementById('evalFooter').style.display = 'none';
-        }
+    // localStorage 백업 제거 (Firebase가 단일 정답)
+    renderApplicantList();
+    updateDashboard();
+
+    // 현재 열린 폼이 결시 처리되면 패널 업데이트
+    if (currentApplicantId) {
+      const a = appData.applicants.find(x => x.id === currentApplicantId);
+      if (a?.absent) {
+        document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';
+        document.getElementById('evalFooter').style.display = 'none';
       }
     }
   }, (error) => {
