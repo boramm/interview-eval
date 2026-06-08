@@ -1351,15 +1351,17 @@ const JOB_BADGES = { office: 'badge-office', labor: 'badge-labor', research: 'ba
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // GAS 전송 — GET 파라미터 방식 (CSP 완전 우회)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
+
 function sendToGAS(url, data) {
+  const targetUrl = url || GAS_URL; // 파라미터 없으면 기본값 사용
   try {
     const params = new URLSearchParams();
     Object.entries(data).forEach(([k, v]) => params.append(k, v ?? ''));
-    const fullUrl = url + '?' + params.toString();
-    // fetch + no-cors: GAS의 리다이렉트를 잘 따라감 (응답은 못 읽지만 전송은 성공)
+    const fullUrl = targetUrl + '?' + params.toString();
     fetch(fullUrl, { method: 'GET', mode: 'no-cors' })
       .then(() => console.log('GAS 전송 완료'))
-      .catch(e => console.log('GAS 전송 시도 (응답 확인 불가):', e));
+      .catch(e => console.log('GAS 전송 시도:', e));
   } catch(e) {
     console.log('GAS 전송 오류:', e);
   }
@@ -1448,7 +1450,7 @@ function doFinalSubmit() {
   saveToStorage();
 
   // GAS에 최종제출 기록
-  const gasUrl = localStorage.getItem('gasUrl');
+  const gasUrl = GAS_URL;
   if (gasUrl) {
     const a = appData.applicants.find(x => x.id === currentApplicantId);
     sendToGAS(gasUrl, {
@@ -1970,7 +1972,7 @@ function markAbsent() {
   saveToStorage();
 
   // Sheets에 결시 기록
-  const gasUrl = localStorage.getItem('gasUrl');
+  const gasUrl = GAS_URL;
   if (gasUrl) {
     sendToGAS(gasUrl, {
       projectTitle: appData.projectTitle,
@@ -2058,7 +2060,7 @@ async function saveEvaluation() {
   if (false && localStorage.getItem('gasUrl')) {
     const a = appData.applicants.find(x => x.id === currentApplicantId);
     try {
-      sendToGAS(localStorage.getItem('gasUrl'), {
+      sendToGAS(GAS_URL, {
         projectTitle: appData.projectTitle,
         applicantName: a?.name || '',
         jobType: JOB_LABELS[a?.jobType] || '',
@@ -2708,7 +2710,7 @@ function toggleAbsence(id, isAbsent) {
 // Sheets 동기화 (관리자용)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function uploadAllToSheets() {
-  const gasUrl = localStorage.getItem('gasUrl');
+  const gasUrl = GAS_URL;
   if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
   
   if (appData.evaluations.length === 0) {
@@ -2765,7 +2767,7 @@ async function uploadAllToSheets() {
 }
 
 async function syncFromSheets() {
-  const gasUrl = localStorage.getItem('gasUrl');
+  const gasUrl = GAS_URL;
   if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
 
   const btn = document.getElementById('syncBtn');
