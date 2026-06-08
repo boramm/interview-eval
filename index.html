@@ -897,7 +897,7 @@
     <div class="header-logo">삼육대학교</div>
     <div class="header-divider"></div>
     <div class="header-title-wrap">
-      <input type="text" id="projectTitle" value="2026년 6월 1일부 계약직 면접" title="클릭하여 제목 수정">
+      <input type="text" id="projectTitle" value="2026년 7월 1일부 계약직 면접" title="클릭하여 제목 수정">
       <span class="edit-icon">✏️</span>
     </div>
   </div>
@@ -1253,32 +1253,34 @@ function doPost(e) {
 // 평가위원 계정 (사번 = 아이디 & 비밀번호)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const EVALUATORS = [
-  { name: '김성완', employeeId: '000163', scope: 'all', isAdmin: false },
-  { name: '김현호', employeeId: '000206', scope: 'all', isAdmin: false },
-  { name: '한숙정', employeeId: '000173', scope: '생활건강증진원', isAdmin: false },
-  { name: '이금선', employeeId: '000905', scope: '생활건강증진원', isAdmin: false },
-  { name: '이승원', employeeId: '000326', scope: '교육인증센터', isAdmin: false },
-  { name: '신동석', employeeId: '000122', scope: '교육인증센터', isAdmin: false },
-  { name: '전규성', employeeId: '000311', scope: '시설관리팀', isAdmin: false },
-  { name: '이보람', employeeId: '005923', scope: 'all', isAdmin: true },
+  { name: '이보람', employeeId: '005923', scope: 'all',           isAdmin: true  },
+  { name: '김성완', employeeId: '000163', scope: 'all',           isAdmin: false },
+  { name: '김현호', employeeId: '000206', scope: 'all',           isAdmin: false },
+  { name: '박대성', employeeId: '000301', scope: '경비팀',         isAdmin: false },
+  { name: '김진현', employeeId: '000401', scope: '미화팀',         isAdmin: false },
+  { name: '신동석', employeeId: '000122', scope: '교수학습개발센터', isAdmin: false },
+  { name: '이승원', employeeId: '000326', scope: '교수학습개발센터', isAdmin: false },
+  { name: '김재현', employeeId: '000501', scope: '입학팀',         isAdmin: false },
+  { name: '이병재', employeeId: '000601', scope: '취업진로지원센터', isAdmin: false },
 ];
 
 const DEFAULT_APPLICANTS = [
-  { id: 'a001', num: 'SYU-001', name: '김진현', department: '생활건강증진원 금연금주클리닉', deptGroup: '생활건강증진원', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1yz9JUh2mnbONy2QgXeR1F_PRXZFiGxSu/preview' },
-  { id: 'a002', num: 'SYU-002', name: '안호명', department: '생활건강증진원 금연금주클리닉', deptGroup: '생활건강증진원', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1VlNFx6MVu4LGAYlvh0tUfcwU9kKTWcS2/preview' },
-  { id: 'a003', num: 'SYU-003', name: '황재영', department: '생활건강증진원 금연금주클리닉', deptGroup: '생활건강증진원', jobType: 'office', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1gU9HDtti_hKfaNMvWnicrgZTWOSbYL9s/preview' },
-  { id: 'a004', num: 'SYU-004', name: '김용선', department: '교육혁신원 교육인증센터', deptGroup: '교육인증센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1nuC2nYgBTKu63-nJbHBqMIKN4U_PY-y4/preview' },
-  { id: 'a005', num: 'SYU-005', name: '최가은', department: '교육혁신원 교육인증센터', deptGroup: '교육인증센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/10zgUXYCBSGgdS8aKk1Ok0j0Ge0kih26Z/preview' },
-  { id: 'a006', num: 'SYU-006', name: '유봉기', department: '사무처 시설관리팀 미화', deptGroup: '시설관리팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1cnsHGyhOm-FDDKk46Sel5DCRvLBBaHdu/preview' },
-  { id: 'a007', num: 'SYU-007', name: '이경애', department: '사무처 시설관리팀 미화', deptGroup: '시설관리팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/17S11uROrZJwX2Rls1VnhEcU865pbQHsS/preview' },
-  { id: 'a008', num: 'SYU-008', name: '최은성', department: '사무처 시설관리팀 미화', deptGroup: '시설관리팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1W8Q9v0chzo3rNvbyBq7t4Bh-fVD-ukhe/preview' },
-  { id: 'a009', num: 'SYU-009', name: '최정애', department: '사무처 시설관리팀 미화', deptGroup: '시설관리팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1m9Ql80k1tjz2QlAJGZQnJ-v8d7GSYZWv/preview' },
+  { id: 'a001', num: 'SYU-001', name: '김남준', department: '사무처 경비팀',                 deptGroup: '경비팀',          jobType: 'labor',    bohun: 'no', driveUrl: '' },
+  { id: 'a002', num: 'SYU-002', name: '이경자', department: '사무처 시설관리팀 미화',          deptGroup: '미화팀',          jobType: 'labor',    bohun: 'no', driveUrl: '' },
+  { id: 'a003', num: 'SYU-003', name: '여윤정', department: '입학처 입학팀 입학사정관',        deptGroup: '입학팀',          jobType: 'office',   bohun: 'no', driveUrl: '' },
+  { id: 'a004', num: 'SYU-004', name: '황재영', department: '입학처 입학팀 입학사정관',        deptGroup: '입학팀',          jobType: 'office',   bohun: 'no', driveUrl: '' },
+  { id: 'a005', num: 'SYU-005', name: '정상목', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: '' },
+  { id: 'a006', num: 'SYU-006', name: '한성지', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: '' },
+  { id: 'a007', num: 'SYU-007', name: '홍윤기', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: '' },
+  { id: 'a008', num: 'SYU-008', name: '안수민', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: '' },
+  { id: 'a009', num: 'SYU-009', name: '오혜리', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: '' },
+  { id: 'a010', num: 'SYU-010', name: '최지아', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: '' },
 ];
 
 let currentUser = null; // 로그인한 평가위원
 
 let appData = {
-  projectTitle: '2026년 6월 1일부 계약직 면접',
+  projectTitle: '2026년 7월 1일부 계약직 면접',
   applicants: DEFAULT_APPLICANTS,
   evaluations: [],
   remarks: {}
@@ -1523,7 +1525,7 @@ function showTab(tab) {
     updateDashboard();
     // 관리자만 내부기안용 버튼 표시
     const finalBtn = document.getElementById('finalReportBtn');
-    if (finalBtn) finalBtn.style.display = (currentUser && currentUser.employeeId === '005923') ? 'inline-flex' : 'none';
+    if (finalBtn) finalBtn.style.display = (currentUser && ['005923','000163','000206'].includes(currentUser.employeeId)) ? 'inline-flex' : 'none';
   } else if (tab === 'settings') {
     document.getElementById('tab-settings').classList.add('active');
     document.getElementById('settingsView').classList.add('active');
@@ -2380,7 +2382,7 @@ function printFinalReport() {
 
   // 부서별 선발 인원 설정 (기본 1명, 시설관리팀 2명)
   const HIRE_COUNT = {
-    '시설관리팀': 2,
+    '미화팀': 2,
   };
 
   // 부서별 순위표 생성
@@ -2717,7 +2719,7 @@ async function syncFromSheets() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function printSignature() {
   if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
-  const isAdmin = currentUser.employeeId === '005923' || currentUser.employeeId === '000206';
+  const isAdmin = ['005923','000163','000206'].includes(currentUser.employeeId);
   if (isAdmin) {
     openSignatureModal();
   } else {
@@ -2793,6 +2795,12 @@ function generateSignaturePrint(evaluatorName, deptFilter) {
   if (evaluatorList.length === 0) { showToast('출력할 데이터가 없습니다.', 'error'); return; }
 
   function buildPage(evName, items) {
+    // 지원자를 num(SYU-001 등) 기준으로 오름차순 정렬
+    items = [...items].sort((a, b) => {
+      const na = a.applicant?.num || '';
+      const nb = b.applicant?.num || '';
+      return na.localeCompare(nb, undefined, {numeric: true});
+    });
     const deptName = items[0]?.applicant?.department || '';
     // 결시 제외
     const validItems = items.filter(({ev}) => !ev.isAbsent);
