@@ -1219,7 +1219,7 @@ function doPost(e) {
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 전체 데이터 JSON 백업</button>
           <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="importData()">📤 백업 복원</button>
-          <button class="btn btn-red btn-sm" onclick="clearAllData()">🗑️ 평가 데이터 초기화</button>
+          <button class="btn btn-red btn-sm" onclick="clearAllData()" id="clearDataBtn" style="display:none">🗑️ 평가 데이터 초기화</button>
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
       </div>
@@ -1656,13 +1656,15 @@ function showTab(tab) {
     updateDashboard();
     // 관리자만 내부기안용 버튼 표시
     const finalBtn = document.getElementById('finalReportBtn');
-    if (finalBtn) finalBtn.style.display = (currentUser && ['005923','000163','000206'].includes(currentUser.employeeId)) ? 'inline-flex' : 'none';
+    if (finalBtn) finalBtn.style.display = (currentUser && currentUser.employeeId === '005923') ? 'inline-flex' : 'none';
   } else if (tab === 'settings') {
     document.getElementById('tab-settings').classList.add('active');
     document.getElementById('settingsView').classList.add('active');
     // 관리자만 결시 관리 표시
     const isAdmin = currentUser && currentUser.employeeId === '005923';
     document.getElementById('absenceCard').style.display = isAdmin ? 'block' : 'none';
+    const clearBtn = document.getElementById('clearDataBtn');
+    if (clearBtn) clearBtn.style.display = isAdmin ? 'inline-flex' : 'none';
     if (isAdmin) renderAbsenceList();
   }
 }
@@ -2850,7 +2852,7 @@ async function syncFromSheets() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function printSignature() {
   if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
-  const isAdmin = ['005923','000163','000206'].includes(currentUser.employeeId);
+  const isAdmin = currentUser.employeeId === '005923';
   if (isAdmin) {
     openSignatureModal();
   } else {
@@ -3114,16 +3116,35 @@ function doImport(e) {
 
 function clearAllData() {
   if (!confirm('평가 데이터(점수/의견)를 모두 삭제하시겠어요?\n지원자와 평가위원 정보는 유지됩니다.')) return;
-  if (!confirm('한 번 더 확인합니다. 평가 데이터를 초기화하시겠어요?')) return;
-  
-  // 평가 데이터와 비고만 초기화
+  if (!confirm('⚠️ Firebase 전체 삭제입니다.\n모든 위원의 평가 데이터가 사라집니다.\n정말 삭제하시겠어요?')) return;
+
+  // 메모리 초기화
   appData.evaluations = [];
   appData.remarks = {};
-  
-  saveToStorage();
+  appData.applicants.forEach(a => { a.absent = false; });
+
+  // localStorage 초기화
+  try { localStorage.removeItem('interviewApp'); } catch(e) {}
+
+  // Firebase 초기화 (전체 삭제 → 빈 객체로 덮어쓰기)
+  if (window._fbReady) {
+    const db = window._fbDb;
+    const ref = window._fbRef;
+    const set = window._fbSet;
+    set(ref(db, FB_PATH), {
+      evaluations: [],
+      remarks: {},
+      absences: [],
+      projectTitle: appData.projectTitle
+    }).then(() => {
+      showToast('✅ 전체 초기화 완료 (Firebase 포함)', 'success');
+    }).catch(e => {
+      showToast('Firebase 삭제 실패: ' + e.message, 'error');
+    });
+  }
+
   renderApplicantList();
   updateDashboard();
-  showToast('평가 데이터가 초기화되었습니다', 'success');
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
