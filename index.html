@@ -25,6 +25,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // 전역으로 노출
   window._fbDb = db;
   window._fbRef = ref;
   window._fbSet = set;
@@ -34,6 +35,7 @@
   window._fbRemove = remove;
   window._fbReady = true;
 
+  // Firebase 준비 완료 이벤트
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
 <style>
@@ -73,6 +75,7 @@
     flex-direction: column;
   }
 
+  /* ─── 상단 헤더 ─── */
   .header {
     background: var(--navy);
     color: white;
@@ -136,6 +139,7 @@
   .btn-green:hover { background: #15803d; }
   .btn-sm { padding: 5px 10px; font-size: 12px; }
 
+  /* ─── 탭 ─── */
   .tab-bar {
     background: var(--navy-mid);
     display: flex;
@@ -154,8 +158,10 @@
   .tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
   .tab:hover:not(.active) { color: rgba(255,255,255,0.85); }
 
+  /* ─── 메인 영역 ─── */
   .main { display: flex; flex: 1; overflow: hidden; }
 
+  /* ─── 사이드바 ─── */
   .sidebar {
     width: 240px;
     background: var(--white);
@@ -219,8 +225,10 @@
 
   .sidebar-footer { padding: 12px; border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 6px; }
 
+  /* ─── 콘텐츠 ─── */
   .content { flex: 1; display: flex; overflow: hidden; }
 
+  /* 평가 탭 - 2분할 */
   .eval-view { display: flex; width: 100%; }
 
   .pdf-panel {
@@ -271,6 +279,8 @@
   .eval-panel-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
   .eval-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
 
+  /* 평가표 */
+  .eval-section { }
   .eval-section-title {
     font-size: 11px;
     font-weight: 700;
@@ -418,14 +428,8 @@
   }
   .save-btn:hover { background: var(--navy-light); }
   .save-btn.saved { background: var(--green); }
-  /* 비활성화 시 스타일 정의 */
-  .save-btn:disabled {
-    background: var(--gray-300) !important;
-    color: var(--gray-500) !important;
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
 
+  /* ─── 대시보드 ─── */
   .dashboard-view {
     flex: 1;
     overflow-y: auto;
@@ -520,6 +524,7 @@
     text-align: left;
   }
 
+  /* 인쇄 결과 상세 */
   .eval-detail-list { display: flex; flex-direction: column; gap: 12px; }
   .eval-detail-card {
     background: white;
@@ -535,7 +540,12 @@
   }
   .eval-detail-name { font-weight: 700; font-size: 13px; }
   .eval-detail-body { padding: 10px 14px; }
+  .eval-scores-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+  .eval-score-cell { text-align: center; }
+  .eval-score-cell-label { font-size: 10px; color: var(--gray-500); margin-bottom: 2px; }
+  .eval-score-cell-val { font-size: 16px; font-weight: 700; color: var(--navy); }
 
+  /* ─── 설정 탭 ─── */
   .settings-view {
     flex: 1; overflow-y: auto; padding: 24px;
     display: none; flex-direction: column; gap: 20px;
@@ -563,6 +573,7 @@
   .status-warn { background: #fef3c7; color: #92400e; }
   .status-err { background: #fee2e2; color: #991b1b; }
 
+  /* ─── 모달 ─── */
   .modal-overlay {
     display: none;
     position: fixed; inset: 0;
@@ -598,6 +609,19 @@
   .modal-field input:focus, .modal-field select:focus { border-color: var(--blue); }
   .modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px; }
 
+  .file-upload-area {
+    border: 2px dashed var(--gray-300);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .file-upload-area:hover { border-color: var(--blue); background: #eff6ff; }
+  .file-upload-area.has-file { border-color: var(--green); background: #f0fdf4; }
+  .file-upload-label { font-size: 13px; color: var(--gray-500); display: block; margin-top: 6px; }
+
+  /* ─── 인쇄 스타일 ─── */
   @media print {
     @page { size: A4 landscape; margin: 12mm; }
     body { height: auto; overflow: visible; background: white; font-size: 11px; }
@@ -615,6 +639,7 @@
     .dashboard-title { font-size: 14px; }
   }
 
+  /* 상태 토스트 */
   .toast {
     position: fixed; bottom: 20px; right: 20px;
     background: var(--gray-800); color: white;
@@ -636,6 +661,14 @@
   }
   .empty-state p { font-size: 14px; }
 
+  .no-select { display: none; }
+  .has-select { display: block; }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     태블릿 반응형 (가로 모드 최적화)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  
+  /* 태블릿 네비게이션 바 (기본 숨김) */
   .tablet-nav {
     display: none;
     background: var(--white);
@@ -690,10 +723,28 @@
   }
 
   @media (max-width: 1023px) {
-    .tablet-nav { display: flex; }
-    .sidebar { display: none; }
-    .content { flex-direction: row; }
-    .pdf-viewer { width: 70%; flex-shrink: 0; }
+    /* 태블릿: 상단 네비게이션 표시 */
+    .tablet-nav {
+      display: flex;
+    }
+    
+    /* 좌측 사이드바 숨김 */
+    .sidebar {
+      display: none;
+    }
+    
+    /* 콘텐츠 영역 2분할 */
+    .content {
+      flex-direction: row;
+    }
+    
+    /* PDF 뷰어 70% */
+    .pdf-viewer {
+      width: 70%;
+      flex-shrink: 0;
+    }
+    
+    /* 평가 영역 30% - 높이 제약 추가 */
     .eval-view {
       width: 30%;
       flex-shrink: 0;
@@ -702,17 +753,23 @@
       height: 100%;
       overflow: hidden;
     }
+    
+    /* 평가 패널 높이 100% */
     .eval-panel {
       height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
+    
+    /* 평가 본문 영역 스크롤 보장 */
     .eval-body {
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
+    
+    /* 평가 하단 버튼 고정 */
     .eval-footer {
       flex-shrink: 0;
       position: sticky;
@@ -721,47 +778,128 @@
       z-index: 10;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
     }
-    .dashboard-view { width: 100%; }
-    .settings-view { width: 100%; }
-    .btn { padding: 10px 16px; font-size: 14px; min-height: 44px; }
-    .icon-btn { width: 44px; height: 44px; font-size: 16px; }
-    .header { padding: 0 16px; }
-    #projectTitle { min-width: 200px; font-size: 13px; }
+    
+    /* 대시보드는 전체 너비 */
+    .dashboard-view {
+      width: 100%;
+    }
+    
+    /* 설정 탭도 전체 너비 */
+    .settings-view {
+      width: 100%;
+    }
+    
+    /* 버튼 터치 영역 확대 */
+    .btn {
+      padding: 10px 16px;
+      font-size: 14px;
+      min-height: 44px;
+    }
+    
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      font-size: 16px;
+    }
+    
+    /* 평가 폼 간격 조정 */
+    .eval-form {
+      padding: 16px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    /* 별점 버튼 크기 */
+    .star-rating button {
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+    }
+    
+    /* 헤더 간소화 */
+    .header {
+      padding: 0 16px;
+    }
+    
+    #projectTitle {
+      min-width: 200px;
+      font-size: 13px;
+    }
   }
   
   @media (max-width: 767px) {
-    .content { flex-direction: column; }
-    .pdf-viewer, .eval-view, .dashboard-view, .settings-view { width: 100%; height: 100%; }
-    .tablet-nav select { font-size: 13px; }
-    .tablet-nav-btn { font-size: 12px; padding: 8px 12px; }
+    /* 모바일 세로: 1단 레이아웃 */
+    .content {
+      flex-direction: column;
+    }
+    
+    .pdf-viewer,
+    .eval-view,
+    .dashboard-view,
+    .settings-view {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .tablet-nav select {
+      font-size: 13px;
+    }
+    
+    .tablet-nav-btn {
+      font-size: 12px;
+      padding: 8px 12px;
+    }
   }
 </style>
 </head>
 <body>
 
-<div id="loginOverlay" style="position:fixed;inset:0;background:var(--navy);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+<!-- 로그인 오버레이 -->
+<div id="loginOverlay" style="
+  position:fixed;inset:0;background:var(--navy);z-index:9999;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;
+">
   <div style="position:absolute;top:16px;right:20px">
     <button onclick="viewDashboardOnly()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Pretendard',sans-serif">
       📊 결과 대시보드만 보기
     </button>
   </div>
+  
+  <!-- 로고 + 한글명 -->
   <div style="text-align:center;margin-bottom:40px">
     <div style="font-family:Pretendard,sans-serif;font-size:42px;font-weight:800;color:#fbbf24;letter-spacing:2px">삼육대학교</div>
   </div>
+  
   <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;font-weight:500">계약직원 면접 평가 시스템</div>
+  
   <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:32px 36px;width:360px">
     <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:20px;letter-spacing:0.5px">사번으로 로그인</div>
     <div style="margin-bottom:14px">
-      <input id="loginId" type="text" placeholder="사번 입력 (예: 001234)" style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Pretendard',sans-serif;outline:none;text-align:center;letter-spacing:3px" onkeydown="if(event.key==='Enter')doLogin()">
+      <input id="loginId" type="text" placeholder="사번 입력 (예: 001234)"
+        style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);
+        background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Pretendard',sans-serif;outline:none;text-align:center;letter-spacing:3px"
+        onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div style="margin-bottom:20px">
-      <input id="loginPw" type="password" placeholder="비밀번호 (사번과 동일)" style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Pretendard',sans-serif;outline:none;text-align:center;letter-spacing:3px" onkeydown="if(event.key==='Enter')doLogin()">
+      <input id="loginPw" type="password" placeholder="비밀번호 (사번과 동일)"
+        style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);
+        background:rgba(255,255,255,0.08);color:white;font-size:15px;font-family:'Pretendard',sans-serif;outline:none;text-align:center;letter-spacing:3px"
+        onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button onclick="doLogin()" style="width:100%;padding:13px;background:var(--gold);color:var(--navy);font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:'Pretendard',sans-serif">로그인</button>
-    <div id="loginError" style="color:#fca5a5;font-size:12px;text-align:center;margin-top:12px;display:none;font-family:'Pretendard',sans-serif">사번이 올바르지 않습니다. 다시 확인해주세요.</div>
+    <button onclick="doLogin()" style="width:100%;padding:13px;background:var(--gold);color:var(--navy);
+      font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:'Pretendard',sans-serif">
+      로그인
+    </button>
+    <div id="loginError" style="color:#fca5a5;font-size:12px;text-align:center;margin-top:12px;display:none;font-family:'Pretendard',sans-serif">
+      사번이 올바르지 않습니다. 다시 확인해주세요.
+    </div>
   </div>
+  <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:24px;font-family:'Pretendard',sans-serif">아이디·비밀번호 = 본인 사번</div>
 </div>
 
+<!-- 최종제출 확인 모달 -->
 <div class="modal-overlay" id="submitModal">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -771,7 +909,7 @@
       <div style="background:#fef3c7;border-radius:8px;padding:14px;font-size:13px;color:#92400e;line-height:1.8">
         <strong>최종 제출 전 확인해주세요.</strong><br>
         • 제출 후에는 <strong>수정이 불가능</strong>합니다<br>
-        • 선발결과 확인서명서에 <strong>실물 서명</strong>이 필요합니다<br>
+        • 면접 종료 후 인사담당자가 출력하는 <strong>선발결과 확인서명서에 실물 서명</strong>이 필요합니다<br>
         • 제출 일시와 함께 시스템에 영구 기록됩니다
       </div>
       <div id="submitSummary" style="font-size:13px;color:var(--gray-600);padding:10px;background:var(--gray-50);border-radius:8px;line-height:1.8"></div>
@@ -783,6 +921,7 @@
   </div>
 </div>
 
+<!-- 상단 헤더 -->
 <div class="header">
   <div class="header-left">
     <div class="header-logo">삼육대학교</div>
@@ -804,13 +943,16 @@
   </div>
 </div>
 
+<!-- 탭 -->
 <div class="tab-bar">
   <div class="tab active" id="tab-eval" onclick="showTab('eval')">📋 면접 평가</div>
   <div class="tab" id="tab-dashboard" onclick="showTab('dashboard')">📊 결과 대시보드</div>
   <div class="tab" id="tab-settings" onclick="showTab('settings')">⚙️ 저장 설정</div>
 </div>
 
+<!-- 메인 -->
 <div class="main">
+  <!-- 태블릿 전용 네비게이션 (768px~1023px에서만 표시) -->
   <div class="tablet-nav">
     <select id="tabletApplicantSelect" onchange="selectApplicantFromTablet(this.value)">
       <option value="">지원자를 선택하세요</option>
@@ -819,10 +961,2516 @@
     <button class="tablet-nav-btn" onclick="navigateNextApplicant()" id="tabletNextBtn">다음 ▶</button>
   </div>
 
+  <!-- 사이드바 -->
   <div class="sidebar">
     <div class="sidebar-header">
       <span class="sidebar-title">지원자 목록</span>
       <span style="font-size:12px;color:var(--gray-400)" id="applicantCount">0명</span>
     </div>
     <div class="applicant-list" id="applicantList"></div>
-    <div class="sidebar-
+    <div class="sidebar-footer">
+      <button class="btn btn-navy" style="width:100%;justify-content:center" onclick="openAddModal()">+ 지원자 등록</button>
+    </div>
+  </div>
+
+  <!-- 평가 뷰 -->
+  <div class="content" id="mainContent">
+
+    <!-- 평가 탭 -->
+    <div class="eval-view" id="evalView">
+      <!-- PDF 패널 -->
+      <div class="pdf-panel">
+        <div class="pdf-panel-header">
+          <span class="pdf-panel-title" id="pdfPanelTitle">📄 자기소개서 / 이력서</span>
+          <span style="font-size:11px;color:var(--navy);margin-left:8px;font-weight:600">(마우스 스크롤을 통해 지원자 정보를 확인할 수 있습니다.)</span>
+          <label for="pdfFileInput" style="cursor:pointer">
+            <span class="btn btn-outline btn-sm" style="color:var(--gray-600);background:var(--gray-100);border-color:var(--gray-300)">📎 PDF 교체</span>
+          </label>
+          <input type="file" id="pdfFileInput" accept=".pdf" style="display:none" onchange="loadPdfFile(event)">
+        </div>
+        <div class="pdf-container">
+          <div class="pdf-placeholder" id="pdfPlaceholder">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="4" width="40" height="52" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 20h24M20 28h24M20 36h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M40 4v12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p>좌측에서 지원자를 선택하거나<br>PDF 파일을 업로드하세요</p>
+          </div>
+          <iframe id="pdfViewer" style="display:none;width:100%;height:100%;border:none"></iframe>
+        </div>
+      </div>
+
+      <!-- 평가 패널 -->
+      <div class="eval-panel" id="evalPanel">
+        <div class="eval-panel-header">
+          <div class="eval-panel-title" id="evalPanelName">지원자를 선택하세요</div>
+          <div class="eval-panel-sub" id="evalPanelSub">좌측 목록에서 평가할 지원자를 클릭하세요</div>
+        </div>
+
+        <div class="eval-body" id="evalBody">
+          <div class="empty-state">
+            <p>👈 좌측에서 지원자를 선택해주세요</p>
+          </div>
+        </div>
+
+        <div class="eval-footer" id="evalFooter" style="display:none">
+          <button class="save-btn" id="absentBtn" onclick="markAbsent()" style="flex:3;background:#dc2626;font-size:13px">결시</button>
+          <button class="save-btn" id="saveBtn" onclick="saveEvaluation()" style="flex:5">① 임시저장</button>
+          <button class="save-btn" id="submitBtn" onclick="openSubmitModal()" style="flex:5;background:#9ca3af;font-size:13px;cursor:not-allowed;opacity:0.5" disabled>② 최종제출</button></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 대시보드 탭 -->
+    <div class="dashboard-view" id="dashboardView">
+      <div class="dashboard-header">
+        <div class="dashboard-title" id="dashTitle">면접 평가 결과 대시보드</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 백업</button>
+          <button class="btn btn-outline btn-sm" style="background:#fef3c7;color:#92400e;border-color:#fcd34d" onclick="uploadAllToSheets()">📤 시트로 일괄 업로드</button>
+          <button class="btn btn-outline btn-sm" id="syncBtn" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa" onclick="loadFromFirebase()">🔥 Firebase 새로고침</button>
+          <button class="btn btn-gold btn-sm" onclick="printSignature()">📝 선발결과 확인서명서</button>
+          <button id="finalReportBtn" class="btn btn-sm" onclick="printFinalReport()" style="display:none;background:#065f46;color:white">📋 내부기안용 최종결과표</button>
+          <button class="btn btn-navy btn-sm" onclick="window.print()">🖨️ 결과 인쇄</button>
+        </div>
+      </div>
+
+      <div class="stat-cards" id="statCards"></div>
+
+      <div class="result-table-wrap">
+        <div class="result-table-header">
+          <span class="result-table-title">📊 종합 순위표</span>
+          <span style="font-size:12px;opacity:0.7">점수 기준 자동 정렬 · 비고란 직접 입력 가능</span>
+        </div>
+        <div class="table-scroll"><table class="result-table" id="resultTable" style="min-width:900px">
+          <thead>
+            <tr id="resultTableHead">
+              <th>순위</th>
+              <th>부서</th>
+              <th>가번호</th>
+              <th>성명</th>
+              <th>직군</th>
+              <th id="evalCol1"></th>
+              <th id="evalCol2"></th>
+              <th id="evalCol3"></th>
+              <th id="evalCol4"></th>
+              <th id="evalCol5"></th>
+              <th id="evalCol6"></th>
+              <th>합계</th>
+              <th>평균</th>
+              <th>보훈</th>
+              <th>최종</th>
+              <th>비고</th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- 미평가/결시 현황 - 순위표에 통합됨 (숨김) -->
+      <div style="display:none"><tbody id="pendingTableBody"></tbody></div>
+
+      <!-- 평가 상세 -->
+      <div class="result-table-wrap" id="detailSection">
+        <div class="result-table-header">
+          <span class="result-table-title">📋 평가위원별 상세 점수</span>
+        </div>
+        <div style="padding:16px" id="evalDetailList"></div>
+      </div>
+
+      <div style="text-align:right;font-size:11px;color:var(--gray-400);padding:8px 0" id="printDate"></div>
+    </div>
+
+    <!-- 설정 탭 -->
+    <div class="settings-view" id="settingsView">
+      <div class="settings-card">
+        <div class="settings-card-title">🔗 Google Sheets 연동 설정</div>
+        <div class="settings-field">
+          <label>Google Apps Script 웹앱 URL</label>
+          <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" value="">
+          <div class="settings-help">아래 안내에 따라 Google Sheets에 Apps Script를 연결하면, 평가 데이터가 자동으로 스프레드시트에 저장됩니다.</div>
+        </div>
+        <div id="gasStatus" class="settings-status status-warn">⚠️ 아직 연동 전입니다. 현재는 브라우저 로컬 저장소만 사용 중입니다.</div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-navy btn-sm" onclick="testGasConnection()">🔗 연결 테스트</button>
+          <button class="btn btn-green btn-sm" onclick="saveGasUrl()">저장</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">📋 Google Sheets 연동 방법 (단계별 안내)</div>
+        <div style="font-size:13px;color:var(--gray-700);line-height:2;counter-reset:step">
+          <div style="background:var(--gray-50);border-radius:8px;padding:16px;font-size:12px;line-height:1.8;color:var(--gray-700)">
+            <strong>① Google Sheets 생성</strong><br>
+            drive.google.com → 새 스프레드시트 생성 → 이름: "계약직 면접평가 결과"<br><br>
+            <strong>② Apps Script 열기</strong><br>
+            확장 프로그램 → Apps Script 클릭<br><br>
+            <strong>③ 아래 코드 전체 붙여넣기 (기존 코드 삭제 후)</strong><br>
+            <div style="background:#1e1e1e;color:#d4d4d4;border-radius:6px;padding:12px;margin:8px 0;font-family:monospace;font-size:11px;white-space:pre-wrap">var SHEET_ID = '19ZBVRxH8bH5NVF3nSMoS0k_zI75pBth4cYMZDNxsMQE';
+
+function saveData(data) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheets()[0];
+  sheet.appendRow([
+    new Date(),
+    data.projectTitle || '',
+    data.applicantName || '',
+    data.jobType || '',
+    data.department || '',
+    data.evaluatorName || '',
+    data.evalDate || '',
+    Number(data.score1) || 0,
+    Number(data.score2) || 0,
+    Number(data.score3) || 0,
+    Number(data.score4) || 0,
+    Number(data.score5) || 0,
+    Number(data.totalScore) || 0,
+    Number(data.bohunPoint) || 0,
+    Number(data.finalScore) || 0,
+    data.grade || '',
+    data.comment || ''
+  ]);
+}
+
+function getAllRows() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheets()[0];
+  return sheet.getDataRange().getValues();
+}
+
+function doGet(e) {
+  try {
+    // 저장 요청: applicantName 파라미터가 있으면 저장
+    if (e.parameter && e.parameter.applicantName) {
+      saveData(e.parameter);
+      return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
+    }
+    // 조회 요청: rows 반환
+    var rows = getAllRows();
+    return ContentService.createTextOutput(JSON.stringify({rows: rows})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  var data = {};
+  try {
+    if (e.parameter && e.parameter.data) {
+      data = JSON.parse(e.parameter.data);
+    } else if (e.postData) {
+      data = JSON.parse(e.postData.contents);
+    }
+  } catch(err) {}
+  saveData(data);
+  return ContentService.createTextOutput(JSON.stringify({result:'ok'})).setMimeType(ContentService.MimeType.JSON);
+}</div>
+            <strong>④ 배포</strong><br>
+            배포 → 새 배포 → 유형: 웹 앱 → 액세스: 모든 사용자 → 배포<br><br>
+            <strong>⑤ 웹앱 URL 복사 후 위 입력란에 붙여넣기</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-card" id="absenceCard" style="display:none">
+        <div class="settings-card-title">🚫 결시 관리 (관리자 전용)</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">결시 처리하면 모든 평가위원에게 즉시 반영됩니다.</div>
+        <div id="absenceList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">📋 지원자 정보 관리</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          CSV 양식을 다운로드하여 작성 후 업로드하면 지원자 정보가 일괄 반영됩니다.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="downloadApplicantTemplate()">📥 지원자 양식 다운로드</button>
+          <button class="btn btn-primary btn-sm" onclick="uploadApplicantData()">📤 지원자 데이터 업로드</button>
+        </div>
+        <input type="file" id="applicantFile" accept=".csv" style="display:none" onchange="handleApplicantUpload(event)">
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">👥 평가위원 정보 관리</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          CSV 양식을 다운로드하여 작성 후 업로드하면 평가위원 정보가 일괄 반영됩니다.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="downloadEvaluatorTemplate()">📥 평가위원 양식 다운로드</button>
+          <button class="btn btn-primary btn-sm" onclick="uploadEvaluatorData()">📤 평가위원 데이터 업로드</button>
+        </div>
+        <input type="file" id="evaluatorFile" accept=".csv" style="display:none" onchange="handleEvaluatorUpload(event)">
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">📊 연동 시트 바로가기</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          평가 결과가 실시간으로 저장되는 Google Sheets를 확인하세요.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:#34A853;color:white;border:none" onclick="openResultSheet()">📊 결과 시트 열기</button>
+          <span id="sheetStatus" style="font-size:12px;color:var(--gray-500);display:flex;align-items:center"></span>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">⚠️ 데이터 관리</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="exportData()">📥 전체 데이터 JSON 백업</button>
+          <button class="btn btn-outline btn-sm" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)" onclick="importData()">📤 백업 복원</button>
+          <button class="btn btn-red btn-sm" onclick="clearAllData()" id="clearDataBtn" style="display:none">🗑️ 평가 데이터 초기화</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
+      </div>
+    </div>
+
+  </div><!-- /main content -->
+</div><!-- /main -->
+
+<!-- 지원자 추가/수정 모달 -->
+<div class="modal-overlay" id="applicantModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">지원자 등록</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editingId">
+      <div class="modal-field">
+        <label>성명 *</label>
+        <input type="text" id="mName" placeholder="홍길동">
+      </div>
+      <div class="modal-field">
+        <label>지원부서 *</label>
+        <input type="text" id="mDept" placeholder="예: 총무인사팀, 연구지원팀">
+      </div>
+      <div class="modal-field">
+        <label>직군 *</label>
+        <select id="mJobType">
+          <option value="office">사무직</option>
+          <option value="labor">노무직</option>
+          <option value="research">연구직</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>보훈대상자 여부</label>
+        <select id="mBohun">
+          <option value="no">해당없음</option>
+          <option value="yes">해당</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>자기소개서 Google Drive 링크 (선택)</label>
+        <input type="text" id="mDriveUrl" placeholder="https://drive.google.com/file/d/.../view">
+        <div style="font-size:11px;color:var(--gray-400);margin-top:4px">Drive에서 파일 우클릭 → 공유 → 링크 복사 후 붙여넣기</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" style="color:var(--gray-600)" onclick="closeModal()">취소</button>
+      <button class="btn btn-gold" onclick="saveApplicant()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 데이터 & 상태
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 평가위원 계정 (사번 = 아이디 & 비밀번호)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const EVALUATORS = [
+  { name: '이보람', employeeId: '005923', scope: 'all',           isAdmin: true  },
+  { name: '김성완', employeeId: '000163', scope: 'all',           isAdmin: false },
+  { name: '김현호', employeeId: '000206', scope: 'all',           isAdmin: false },
+  { name: '박대성', employeeId: '000170', scope: '경비팀',         isAdmin: false },
+  { name: '김진현', employeeId: '000239', scope: '미화팀',         isAdmin: false },
+  { name: '신동석', employeeId: '000122', scope: '교수학습개발센터', isAdmin: false },
+  { name: '이승원', employeeId: '000326', scope: '교수학습개발센터', isAdmin: false },
+  { name: '김재현', employeeId: '000219', scope: '입학팀',         isAdmin: false },
+  { name: '이병재', employeeId: '000288', scope: '취업진로지원센터', isAdmin: false },
+];
+
+const DEFAULT_APPLICANTS = [
+  { id: 'a001', num: 'SYU-001', name: '김남준', department: '사무처 경비팀',                 deptGroup: '경비팀',          jobType: 'labor',    bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1yo9UxwgsHyfDeYViGLhaxQqHMzYe2zr7/preview' },
+  { id: 'a002', num: 'SYU-002', name: '이경자', department: '사무처 시설관리팀 미화',          deptGroup: '미화팀',          jobType: 'labor',    bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1ZQBlaxXhZ7SlciB4PcPArRxeIq99pFxi/preview' },
+  { id: 'a003', num: 'SYU-003', name: '여윤정', department: '입학처 입학팀 입학사정관',        deptGroup: '입학팀',          jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1NqIahVyCwn7I19K-E_AALJZReipIa1Db/preview' },
+  { id: 'a004', num: 'SYU-004', name: '황재영', department: '입학처 입학팀 입학사정관',        deptGroup: '입학팀',          jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1zaCIROEuuOPzmIj_V2vFKL4wd7hGPFI9/preview' },
+  { id: 'a005', num: 'SYU-005', name: '정상목', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1gfccWxmiRSQAugSmG9ZdB_aiLdjIlhD1/preview' },
+  { id: 'a006', num: 'SYU-006', name: '한성지', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1b2iWngLicuOBeC6h-WsRm_jvQeM-r1oU/preview' },
+  { id: 'a007', num: 'SYU-007', name: '홍윤기', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1qIXm4PpglxhqD9kLHeq-vMm9SIqBDosZ/preview' },
+  { id: 'a008', num: 'SYU-008', name: '안수민', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1pEN0Hj_s9aztloMQ8tacM0fKz_OsbKPS/preview' },
+  { id: 'a009', num: 'SYU-009', name: '오혜리', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/10syOccQUyXGU17ksWJRaRqMe-O7XiPJa/preview' },
+  { id: 'a010', num: 'SYU-010', name: '최지아', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1zYGIBiwxI16VsilAwSDkbubGZCWqUczI/preview' },
+];
+
+let currentUser = null; // 로그인한 평가위원
+
+let appData = {
+  projectTitle: '2026년 7월 1일부 계약직 면접',
+  applicants: DEFAULT_APPLICANTS,
+  evaluations: [],
+  remarks: {}
+};
+
+let currentApplicantId = null;
+let pendingPdfData = null;  // 모달에서 선택한 PDF
+
+// 직군별 평가 항목
+const EVAL_ITEMS = {
+  office: [
+    { key: 's1', name: '대학직원으로서의 자세', max: 20 },
+    { key: 's2', name: '전문지식과 그 응용능력', max: 20 },
+    { key: 's3', name: '의사 표현의 정확성과 논리성', max: 20 },
+    { key: 's4', name: '예의·품행 및 성실성', max: 20 },
+    { key: 's5', name: '창의력·의지력 및 발전가능성', max: 20 },
+  ],
+  labor: [
+    { key: 's1', name: '대학직원으로서의 자세', max: 20 },
+    { key: 's2', name: '전문지식과 그 응용능력', max: 20 },
+    { key: 's3', name: '의사 표현의 정확성과 논리성', max: 20 },
+    { key: 's4', name: '예의·품행 및 성실성', max: 20 },
+    { key: 's5', name: '창의력·의지력 및 발전가능성', max: 20 },
+  ],
+  research: [
+    { key: 's1', name: '대학직원으로서의 자세', max: 20 },
+    { key: 's2', name: '전문지식과 그 응용능력', max: 20 },
+    { key: 's3', name: '의사 표현의 정확성과 논리성', max: 20 },
+    { key: 's4', name: '예의·품행 및 성실성', max: 20 },
+    { key: 's5', name: '창의력·의지력 및 발전가능성', max: 20 },
+  ]
+};
+
+const JOB_LABELS = { office: '사무직', labor: '노무직', research: '연구직' };
+const JOB_BADGES = { office: 'badge-office', labor: 'badge-labor', research: 'badge-research' };
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GAS 전송 — GET 파라미터 방식 (CSP 완전 우회)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
+
+function sendToGAS(url, data) {
+  const targetUrl = url || GAS_URL; // 파라미터 없으면 기본값 사용
+  try {
+    const params = new URLSearchParams();
+    Object.entries(data).forEach(([k, v]) => params.append(k, v ?? ''));
+    const fullUrl = targetUrl + '?' + params.toString();
+    fetch(fullUrl, { method: 'GET', mode: 'no-cors' })
+      .then(() => console.log('GAS 전송 완료'))
+      .catch(e => console.log('GAS 전송 시도:', e));
+  } catch(e) {
+    console.log('GAS 전송 오류:', e);
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 로그인 / 로그아웃
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function viewDashboardOnly() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  showTab('dashboard');
+}
+
+function doLogin() {
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value.trim();
+  
+  // 에러 메시지 숨김
+  document.getElementById('loginError').style.display = 'none';
+  
+  const evaluator = EVALUATORS.find(e => e.employeeId === id && e.employeeId === pw);
+  
+  if (!evaluator) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  currentUser = evaluator;
+  sessionStorage.setItem('currentUserId', evaluator.employeeId);
+  // 오래된 localStorage 캐시 제거 (Firebase가 단일 정답)
+  try { localStorage.removeItem('interviewApp'); } catch(e) {}
+  currentApplicantId = null;
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('userName').textContent = evaluator.name;
+  document.getElementById('userTitle').textContent = evaluator.employeeId;
+  // PDF 패널 초기화
+  document.getElementById('pdfViewer').style.display = 'none';
+  document.getElementById('pdfViewer').src = '';
+  document.getElementById('pdfPlaceholder').style.display = 'flex';
+  document.getElementById('pdfPanelTitle').textContent = '📄 자기소개서 / 이력서';
+  // 평가 패널 초기화
+  document.getElementById('evalPanelName').textContent = '지원자를 선택하세요';
+  document.getElementById('evalPanelSub').textContent = '좌측 목록에서 평가할 지원자를 클릭하세요';
+  document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>👈 좌측에서 지원자를 선택해주세요</p></div>';
+  document.getElementById('evalFooter').style.display = 'none';
+  renderApplicantList();
+  showToast(evaluator.name + '님, 환영합니다!', 'success');
+}
+
+function doLogout() {
+  if (!confirm('로그아웃 하시겠습니까?')) return;
+  currentUser = null;
+  sessionStorage.removeItem('currentUserId');
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 최종 제출
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openSubmitModal() {
+  if (!currentApplicantId || !currentUser) return;
+  const a = appData.applicants.find(x => x.id === currentApplicantId);
+  const myEvals = appData.evaluations.filter(e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name);
+  if (myEvals.length === 0) {
+    showToast('먼저 임시 저장을 해주세요', 'error'); return;
+  }
+  const lastEval = myEvals[myEvals.length - 1];
+  if (lastEval.submitted) {
+    showToast('이미 최종 제출된 평가입니다', 'error'); return;
+  }
+  document.getElementById('submitSummary').innerHTML =
+    `<strong>지원자:</strong> ${a.name} (${a.department})<br>
+     <strong>평가위원:</strong> ${currentUser.name}<br>
+     <strong>최종점수:</strong> ${lastEval.finalScore}점<br>
+     <strong>제출일시:</strong> ${new Date().toLocaleString('ko-KR')}`;
+  document.getElementById('submitModal').classList.add('open');
+}
+
+function doFinalSubmit() {
+  if (!currentApplicantId || !currentUser) return;
+  const myEvals = appData.evaluations.filter(e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name);
+  if (myEvals.length === 0) return;
+  const lastEval = myEvals[myEvals.length - 1];
+  lastEval.submitted = true;
+  lastEval.submittedAt = new Date().toISOString();
+  saveToStorage();
+
+  // GAS에 최종제출 기록
+  const gasUrl = GAS_URL;
+  if (gasUrl) {
+    const a = appData.applicants.find(x => x.id === currentApplicantId);
+    sendToGAS(gasUrl, {
+        projectTitle: appData.projectTitle,
+        applicantName: a?.name, jobType: JOB_LABELS[a?.jobType],
+        department: a?.department, evaluatorName: currentUser.name,
+        evalDate: lastEval.evalDate,
+        score1: lastEval.scores.s1, score2: lastEval.scores.s2,
+        score3: lastEval.scores.s3, score4: lastEval.scores.s4,
+        score5: lastEval.scores.s5,
+        totalScore: lastEval.subTotal, bohunPoint: lastEval.bohunPoint,
+        finalScore: lastEval.finalScore, grade: lastEval.grade,
+        comment: '[최종제출] ' + (lastEval.comment || '')
+      });
+  }
+
+  document.getElementById('submitModal').classList.remove('open');
+  renderApplicantList();
+  showToast('최종 제출 완료! 수정이 불가능합니다.', 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 초기화
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function init() {
+  loadFromStorage(); // localStorage에서 빠르게 먼저 로드
+  document.getElementById('projectTitle').value = appData.projectTitle;
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
+  if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', DEFAULT_GAS_URL);
+  document.getElementById('gasUrl').value = localStorage.getItem('gasUrl');
+  renderApplicantList();
+  updateDashboard();
+  document.getElementById('printDate').textContent = '출력일시: ' + new Date().toLocaleString('ko-KR');
+
+  // Firebase 실시간 리스너 시작 (다른 위원 데이터 즉시 반영)
+  startFirebaseListener();
+
+  // 제목 변경 감지
+  document.getElementById('projectTitle').addEventListener('input', function() {
+    appData.projectTitle = this.value;
+    saveToStorage();
+  });
+
+  // 새로고침 후 자동 로그인 복원
+  const savedId = sessionStorage.getItem('currentUserId');
+  if (savedId) {
+    const evaluator = EVALUATORS.find(e => e.employeeId === savedId);
+    if (evaluator) {
+      currentUser = evaluator;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('userName').textContent = evaluator.name;
+      document.getElementById('userTitle').textContent = evaluator.employeeId;
+      renderApplicantList();
+    }
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Firebase 저장/로드 (실시간 DB)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const FB_PATH = 'interview_2026_07'; // 회차별로 경로 구분
+
+function saveToStorage() {
+  // Firebase에만 저장 (localStorage는 사용 안 함)
+  if (!window._fbReady) return;
+  const db = window._fbDb;
+  const ref = window._fbRef;
+  const set = window._fbSet;
+
+  // evaluations만 저장 (applicants는 코드에 내장)
+  const savePayload = {
+    evaluations: appData.evaluations,
+    remarks: appData.remarks || {},
+    projectTitle: appData.projectTitle,
+    absences: appData.applicants
+      .filter(a => a.absent)
+      .map(a => a.id)
+  };
+
+  set(ref(db, FB_PATH), savePayload)
+    .catch(e => console.error('Firebase 저장 오류:', e));
+}
+
+function loadFromStorage() {
+  // localStorage는 더 이상 신뢰하지 않음
+  // Firebase 리스너가 연결되면 즉시 덮어씀
+  // (빈 상태로 시작해서 Firebase 데이터로 채워지는 방식)
+  appData.evaluations = [];
+  appData.remarks = {};
+}
+
+// Firebase 실시간 리스너 — 다른 위원이 저장하면 즉시 반영
+function startFirebaseListener() {
+  if (!window._fbReady) {
+    window.addEventListener('firebaseReady', startFirebaseListener, { once: true });
+    return;
+  }
+  const db = window._fbDb;
+  const ref = window._fbRef;
+  const onValue = window._fbOnValue;
+
+  onValue(ref(db, FB_PATH), (snapshot) => {
+    const fbStatus = document.getElementById('fbStatus');
+    if (fbStatus) { fbStatus.textContent = '🔥 실시간 연결됨'; fbStatus.style.background = 'rgba(34,197,94,0.2)'; fbStatus.style.color = '#86efac'; }
+
+    const data = snapshot.val();
+
+    // data가 null이면 전체 초기화 (삭제 이벤트)
+    if (!data) {
+      appData.evaluations = [];
+      appData.remarks = {};
+      appData.applicants.forEach(a => { a.absent = false; });
+      try { localStorage.removeItem('interviewApp'); } catch(e) {}
+      renderApplicantList();
+      updateDashboard();
+      return;
+    }
+
+    // 평가 데이터 반영 (빈 배열도 반영)
+    appData.evaluations = Array.isArray(data.evaluations) ? data.evaluations : (data.evaluations ? data.evaluations : []);
+    appData.remarks = data.remarks || {};
+
+    if (data.projectTitle) {
+      appData.projectTitle = data.projectTitle;
+      document.getElementById('projectTitle').value = data.projectTitle;
+    }
+
+    // 결시 반영
+    if (Array.isArray(data.absences)) {
+      appData.applicants.forEach(a => {
+        a.absent = data.absences.includes(a.id);
+      });
+    } else {
+      appData.applicants.forEach(a => { a.absent = false; });
+    }
+
+    // localStorage 백업 제거 (Firebase가 단일 정답)
+    renderApplicantList();
+    updateDashboard();
+
+    // 현재 열린 폼이 결시 처리되면 패널 업데이트
+    if (currentApplicantId) {
+      const a = appData.applicants.find(x => x.id === currentApplicantId);
+      if (a?.absent) {
+        document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';
+        document.getElementById('evalFooter').style.display = 'none';
+      }
+    }
+  }, (error) => {
+    console.error('Firebase 리스너 오류:', error);
+  });
+}
+
+// Firebase에서 최신 데이터 1회 강제 로드
+async function loadFromFirebase() {
+  if (!window._fbReady) return;
+  const db = window._fbDb;
+  const ref = window._fbRef;
+  const get = window._fbGet;
+
+  try {
+    const snapshot = await get(ref(db, FB_PATH));
+    const data = snapshot.val();
+    if (!data) return;
+
+    if (data.evaluations) appData.evaluations = data.evaluations;
+    if (data.remarks) appData.remarks = data.remarks;
+    if (data.projectTitle) appData.projectTitle = data.projectTitle;
+    if (data.absences) {
+      appData.applicants.forEach(a => {
+        a.absent = data.absences.includes(a.id);
+      });
+    }
+    renderApplicantList();
+    updateDashboard();
+    showToast('✅ 데이터 로드 완료', 'success');
+  } catch(e) {
+    console.error('Firebase 로드 오류:', e);
+    showToast('Firebase 로드 실패 (오프라인 데이터 사용 중)', 'error');
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 탭 전환
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 버튼 상태 관리 (임시저장 ↔ 최종제출)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateSubmitButtonState(hasTempSave) {
+  const saveBtn = document.getElementById('saveBtn');
+  const submitBtn = document.getElementById('submitBtn');
+  if (!saveBtn || !submitBtn) return;
+
+  if (hasTempSave) {
+    // 임시저장 완료 → 최종제출만 활성
+    saveBtn.disabled = true;
+    saveBtn.style.background = '#d1d5db';
+    saveBtn.style.color = '#9ca3af';
+    saveBtn.style.cursor = 'not-allowed';
+    saveBtn.style.opacity = '0.6';
+
+    submitBtn.disabled = false;
+    submitBtn.style.background = 'var(--green)';
+    submitBtn.style.color = 'white';
+    submitBtn.style.cursor = 'pointer';
+    submitBtn.style.opacity = '1';
+    submitBtn.textContent = '② 최종제출 ✅';
+  } else {
+    // 아직 임시저장 안 함 → 임시저장만 활성
+    saveBtn.disabled = false;
+    saveBtn.style.background = 'var(--navy)';
+    saveBtn.style.color = 'white';
+    saveBtn.style.cursor = 'pointer';
+    saveBtn.style.opacity = '1';
+    saveBtn.textContent = '① 임시저장';
+
+    submitBtn.disabled = true;
+    submitBtn.style.background = '#9ca3af';
+    submitBtn.style.color = 'white';
+    submitBtn.style.cursor = 'not-allowed';
+    submitBtn.style.opacity = '0.5';
+    submitBtn.textContent = '② 최종제출';
+  }
+}
+
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('evalView').style.display = 'none';
+  document.getElementById('dashboardView').classList.remove('active');
+  document.getElementById('settingsView').classList.remove('active');
+
+  if (tab === 'eval') {
+    document.getElementById('tab-eval').classList.add('active');
+    document.getElementById('evalView').style.display = 'flex';
+  } else if (tab === 'dashboard') {
+    document.getElementById('tab-dashboard').classList.add('active');
+    document.getElementById('dashboardView').classList.add('active');
+    updateDashboard();
+    // 관리자만 내부기안용 버튼 표시
+    const finalBtn = document.getElementById('finalReportBtn');
+    if (finalBtn) finalBtn.style.display = (currentUser && currentUser.employeeId === '005923') ? 'inline-flex' : 'none';
+  } else if (tab === 'settings') {
+    document.getElementById('tab-settings').classList.add('active');
+    document.getElementById('settingsView').classList.add('active');
+    // 관리자만 결시 관리 표시
+    const isAdmin = currentUser && currentUser.employeeId === '005923';
+    document.getElementById('absenceCard').style.display = isAdmin ? 'block' : 'none';
+    const clearBtn = document.getElementById('clearDataBtn');
+    if (clearBtn) clearBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (isAdmin) renderAbsenceList();
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 지원자 목록 렌더링
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderApplicantList() {
+  const list = document.getElementById('applicantList');
+  const count = document.getElementById('applicantCount');
+  count.textContent = appData.applicants.length + '명';
+
+  // 부서 필터링
+  let visible = appData.applicants;
+  if (currentUser && currentUser.scope !== 'all') {
+    visible = appData.applicants.filter(a => a.deptGroup === currentUser.scope);
+  }
+
+  if (visible.length === 0) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">평가할 지원자가 없습니다</div>';
+    updateTabletSelect(visible);
+    return;
+  }
+
+  list.innerHTML = visible.map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const myEval = currentUser ? evals.find(e => e.evaluatorName === currentUser.name) : null;
+    const isSubmitted = myEval?.submitted;
+    const evaluated = evals.length > 0;
+    return `
+    <div class="applicant-card ${a.absent ? '' : evaluated ? 'evaluated' : ''} ${currentApplicantId === a.id ? 'active' : ''}"
+         onclick="${a.absent ? '' : `selectApplicant('${a.id}')`}"
+         id="card_${a.id}"
+         style="${a.absent ? 'opacity:0.45;background:#f9fafb;cursor:not-allowed;' : 'cursor:pointer'}">
+      <div class="applicant-name" style="${a.absent ? 'text-decoration:line-through;color:var(--gray-400)' : ''}">
+        ${a.num ? a.num + '. ' : ''}${a.name}
+      </div>
+      <div class="applicant-meta">${a.department || '-'}</div>
+      <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
+        ${a.absent
+          ? '<span class="applicant-badge" style="background:#fee2e2;color:var(--red)">🚫 결시</span>'
+          : `<span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+             ${a.bohun === 'yes' ? '<span class="applicant-badge badge-bohun">보훈</span>' : ''}
+             ${isSubmitted ? '<span class="applicant-badge" style="background:#dcfce7;color:#166534">✅ 제출완료</span>' :
+               myEval ? '<span class="applicant-badge" style="background:#fef3c7;color:#92400e">임시저장</span>' : ''}`
+        }
+      </div>
+      ${currentUser && currentUser.scope === 'all' ? `
+      <div class="card-actions">
+        <button class="icon-btn icon-btn-edit" onclick="event.stopPropagation();openEditModal('${a.id}')">✏️</button>
+        <button class="icon-btn icon-btn-del" onclick="event.stopPropagation();deleteApplicant('${a.id}')">🗑️</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  
+  // 태블릿 드롭다운 업데이트
+  updateTabletSelect(visible);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 지원자 선택 → 평가 패널 렌더링
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function selectApplicant(id) {
+  const a = appData.applicants.find(x => x.id === id);
+  if (!a || a.absent) return; // 결시 차단
+  
+  // 다른 탭에 있으면 면접평가 탭으로 자동 전환
+  const evalView = document.getElementById('evalView');
+  if (evalView && evalView.style.display !== 'flex') {
+    showTab('eval');
+  }
+  
+  currentApplicantId = id;
+  renderApplicantList();
+
+  // 평가 패널 스크롤 맨 위로
+  const evalBody = document.getElementById('evalBody');
+  if (evalBody) evalBody.scrollTop = 0;
+
+  // PDF — Drive 링크 있으면 바로 표시
+  const viewer = document.getElementById('pdfViewer');
+  if (a.driveUrl) {
+    document.getElementById('pdfPlaceholder').style.display = 'none';
+    viewer.style.display = 'block';
+    viewer.src = a.driveUrl;
+  } else {
+    document.getElementById('pdfPlaceholder').style.display = 'flex';
+    viewer.style.display = 'none';
+    viewer.src = '';
+  }
+  document.getElementById('pdfPanelTitle').textContent = `📄 ${a.name} — 자기소개서`;
+
+  // 평가 패널
+  document.getElementById('evalPanelName').textContent = (a.num ? a.num + '. ' : '') + a.name;
+  document.getElementById('evalPanelSub').textContent = `${a.department || ''} · ${JOB_LABELS[a.jobType]}${a.bohun === 'yes' ? ' · 보훈대상자' : ''}`;
+  document.getElementById('evalFooter').style.display = 'flex';
+
+  renderEvalForm(a);
+}
+
+function renderEvalForm(a) {
+  const items = EVAL_ITEMS[a.jobType];
+  const today = new Date().toISOString().slice(0,10);
+
+  // 이전 내 평가 불러오기 (evaluatorName 기준)
+  const savedEval = null; // 새 평가로 시작
+
+  // 내 기존 평가 불러오기
+  const myPrevEval = currentUser
+    ? appData.evaluations.filter(e => e.applicantId === a.id && e.evaluatorName === currentUser.name).slice(-1)[0]
+    : null;
+  const isSubmitted = myPrevEval?.submitted;
+
+  // 결시 처리된 경우 바로 결시 화면 표시
+  if (myPrevEval?.isAbsent) {
+    document.getElementById('evalBody').innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
+        <div style="font-size:48px">🚫</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red)">결시 처리된 지원자</div>
+        <div style="font-size:13px;color:var(--gray-500);text-align:center">${a.name} 지원자는<br>결시 처리되었습니다</div>
+      </div>`;
+    document.getElementById('evalFooter').style.display = 'none';
+    return;
+  }
+  // 저장된 점수 복원
+  const savedScores = myPrevEval ? myPrevEval.scores : {};
+  const savedGrade = myPrevEval ? myPrevEval.grade : '';
+  const savedComment = myPrevEval ? myPrevEval.comment : '';
+  // 한국 로컬 날짜 (UTC+9 보정)
+  const _now = new Date();
+  const _kst = new Date(_now.getTime() + 9 * 60 * 60 * 1000);
+  const savedDate = _kst.toISOString().slice(0,10); // 항상 오늘 날짜 (KST)
+  const savedBohunPoint = myPrevEval ? myPrevEval.bohunPoint : 0;
+  const savedBohunChecked = savedBohunPoint > 0;
+
+  const html = `
+    ${isSubmitted ? '<div style="background:#d1fae5;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:4px">✅ 최종 제출 완료 — 수정이 불가능합니다</div>' : ''}
+    ${myPrevEval && !isSubmitted ? '<div style="background:#fef3c7;border-radius:8px;padding:8px 14px;font-size:12px;color:#92400e;margin-bottom:4px">📝 임시저장된 평가가 있습니다. 이어서 작성하세요.</div>' : ''}
+    <div class="eval-section">
+      <div class="eval-section-title">평가 기본 정보</div>
+      <div class="eval-meta-grid">
+        <div class="eval-field">
+          <label>면접위원 성함</label>
+          <input type="text" id="ef_evaluatorName" value="${currentUser ? currentUser.name : ''}" readonly style="background:var(--gray-50);color:var(--gray-600)">
+        </div>
+        <div class="eval-field">
+          <label>평가 일자 *</label>
+          <input type="date" id="ef_evalDate" value="${savedDate}">
+        </div>
+        <div class="eval-field" style="grid-column:span 2">
+          <label>지원부서</label>
+          <input type="text" id="ef_dept" value="${a.department || ''}" readonly style="background:var(--gray-50)">
+        </div>
+      </div>
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">평가 항목 (각 20점, 합계 100점)</div>
+      ${items.map(item => `
+        <div class="score-item">
+          <div class="score-item-top">
+            <span class="score-item-name">${item.name}</span>
+            <span class="score-item-max">/ ${item.max}점</span>
+          </div>
+          <div class="score-slider-row">
+            <input type="range" class="score-slider" id="slider_${item.key}"
+              min="0" max="${item.max}" value="${savedScores[item.key] || 0}"
+              oninput="syncScore('${item.key}', this.value)" ${isSubmitted ? 'disabled' : ''}>
+            <input type="number" class="score-input" id="input_${item.key}"
+              min="0" max="${item.max}" value="${savedScores[item.key] || 0}"
+              oninput="syncSlider('${item.key}', this.value)" ${isSubmitted ? 'disabled' : ''}>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">소계 및 보훈 가점</div>
+      <div class="total-box" style="margin-bottom:10px">
+        <span class="total-label">항목 합계</span>
+        <span class="total-score" id="subTotal">0 <span>/ 100점</span></span>
+      </div>
+      ${a.bohun === 'yes' ? `
+      <div class="bohun-box">
+        <div class="bohun-check">
+          <input type="checkbox" id="bohunCheck" ${(savedBohunChecked || !myPrevEval) ? 'checked' : ''} onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
+          <label for="bohunCheck">보훈 가점 적용</label>
+        </div>
+        <div class="bohun-score-wrap">
+          <label>가점</label>
+          <select id="bohunPoints" onchange="calcTotal()" ${isSubmitted ? 'disabled' : ''}>
+            ${[5,6,7,8,9,10].map(v => `<option value="${v}" ${savedBohunPoint === v ? 'selected' : v === 5 && !myPrevEval ? 'selected' : ''}>${v}점</option>`).join('')}
+          </select>
+        </div>
+      </div>` : ''}
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">최종 점수</div>
+      <div class="total-box">
+        <span class="total-label">최종 합산 점수</span>
+        <span class="total-score" id="finalTotal">0 <span>/ ${a.bohun === 'yes' ? '110' : '100'}점</span></span>
+      </div>
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">종합 평가 등급</div>
+      <div class="grade-select">
+        <select id="ef_grade" ${isSubmitted ? 'disabled' : ''}>
+          <option value="">— 선택 —</option>
+          <option value="1" ${savedGrade==='1'?'selected':''}>① 꼭 채용하고 싶다</option>
+          <option value="2" ${savedGrade==='2'?'selected':''}>② 채용하고 싶다</option>
+          <option value="3" ${savedGrade==='3'?'selected':''}>③ 잘 모르겠다</option>
+          <option value="4" ${savedGrade==='4'?'selected':''}>④ 채용하고 싶지 않다</option>
+          <option value="5" ${savedGrade==='5'?'selected':''}>⑤ 절대로 채용해서는 안 된다</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="eval-section">
+      <div class="eval-section-title">종합 의견</div>
+      <textarea class="comment-area" id="ef_comment" placeholder="면접 종합 의견을 자유롭게 입력하세요..." ${isSubmitted ? 'disabled' : ''}>${savedComment}</textarea>
+    </div>
+  `;
+
+  document.getElementById('evalBody').innerHTML = html;
+  calcTotal();
+
+  // 버튼 상태 초기화
+  if (isSubmitted) {
+    // 최종제출 완료 → 둘 다 비활성
+    const saveBtn = document.getElementById('saveBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.4'; saveBtn.style.cursor = 'not-allowed'; }
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.4'; submitBtn.style.cursor = 'not-allowed'; submitBtn.textContent = '✅ 제출완료'; }
+  } else {
+    updateSubmitButtonState(!!myPrevEval); // 임시저장 있으면 true
+  }
+}
+
+function syncScore(key, val) {
+  document.getElementById('input_' + key).value = val;
+  calcTotal();
+}
+function syncSlider(key, val) {
+  const slider = document.getElementById('slider_' + key);
+  const max = parseInt(slider.max);
+  val = Math.min(Math.max(0, parseInt(val)||0), max);
+  document.getElementById('input_' + key).value = val;
+  slider.value = val;
+  calcTotal();
+}
+
+function calcTotal() {
+  const keys = ['s1','s2','s3','s4','s5'];
+  let sub = 0;
+  keys.forEach(k => {
+    const el = document.getElementById('input_' + k);
+    if (el) sub += parseInt(el.value) || 0;
+  });
+  document.getElementById('subTotal').innerHTML = sub + ' <span>/ 100점</span>';
+
+  let bohun = 0;
+  const bohunCheck = document.getElementById('bohunCheck');
+  const bohunPoints = document.getElementById('bohunPoints');
+  if (bohunCheck && bohunCheck.checked && bohunPoints) {
+    bohun = parseInt(bohunPoints.value) || 0;
+  }
+
+  const final = sub + bohun;
+  const a = appData.applicants.find(x => x.id === currentApplicantId);
+  const maxScore = (a && a.bohun === 'yes') ? '110' : '100';
+  document.getElementById('finalTotal').innerHTML = final + ' <span>/ ' + maxScore + '점</span>';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 평가 저장
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 결시 처리 (개별 심사위원)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function markAbsent() {
+  if (!currentUser || !currentApplicantId) return;
+  const a = appData.applicants.find(x => x.id === currentApplicantId);
+  if (!a) return;
+
+  // 이미 결시 처리된 경우
+  const myEval = appData.evaluations.find(e =>
+    e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name
+  );
+  if (myEval?.isAbsent) {
+    showToast('이미 결시 처리된 지원자입니다', 'error'); return;
+  }
+
+  if (!confirm(`${a.name} 지원자를 결시 처리하시겠습니까?
+결시 처리 후에는 평가가 불가능합니다.`)) return;
+
+  // 결시 평가 레코드 저장
+  const absentRecord = {
+    id: Date.now().toString(),
+    applicantId: currentApplicantId,
+    evaluatorName: currentUser.name,
+    evalDate: new Date().toISOString().slice(0,10),
+    scores: { s1:0, s2:0, s3:0, s4:0, s5:0 },
+    subTotal: 0, bohunPoint: 0, finalScore: 0,
+    grade: '결시', comment: '[결시]',
+    submitted: true, isAbsent: true,
+    submittedAt: new Date().toISOString()
+  };
+
+  // 기존 평가 있으면 교체
+  const prevIdx = appData.evaluations.findIndex(
+    e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name
+  );
+  if (prevIdx >= 0) appData.evaluations[prevIdx] = absentRecord;
+  else appData.evaluations.push(absentRecord);
+
+  saveToStorage();
+
+  // Sheets에 결시 기록
+  const gasUrl = GAS_URL;
+  if (gasUrl) {
+    sendToGAS(gasUrl, {
+      projectTitle: appData.projectTitle,
+      applicantName: a.name,
+      jobType: JOB_LABELS[a.jobType],
+      department: a.department,
+      evaluatorName: currentUser.name,
+      evalDate: absentRecord.evalDate,
+      score1:0, score2:0, score3:0, score4:0, score5:0,
+      totalScore:0, bohunPoint:0, finalScore:0,
+      grade:'결시', comment:'[결시]'
+    });
+  }
+
+  renderApplicantList();
+  // 평가 패널 결시 표시
+  document.getElementById('evalBody').innerHTML = `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
+      <div style="font-size:48px">🚫</div>
+      <div style="font-size:16px;font-weight:700;color:var(--red)">결시 처리 완료</div>
+      <div style="font-size:13px;color:var(--gray-500);text-align:center">${a.name} 지원자는<br>결시 처리되었습니다</div>
+    </div>`;
+  document.getElementById('evalFooter').style.display = 'none';
+  showToast(`${a.name} 결시 처리 완료`, 'error');
+}
+
+async function saveEvaluation() {
+  if (!currentUser) { showToast('로그인이 필요합니다', 'error'); return; }
+
+  // 최종제출 여부 확인
+  const existingIdx = appData.evaluations.findLastIndex(
+    e => e.applicantId === currentApplicantId && e.evaluatorName === currentUser.name
+  );
+  if (existingIdx >= 0 && appData.evaluations[existingIdx].submitted) {
+    showToast('이미 최종 제출된 평가는 수정할 수 없습니다', 'error'); return;
+  }
+
+  const evaluatorName = currentUser.name;
+  const evalDate = document.getElementById('ef_evalDate')?.value;
+  if (!evalDate) { showToast('평가 일자를 선택해주세요', 'error'); return; }
+
+  const grade = document.getElementById('ef_grade')?.value;
+  if (!grade) { showToast('종합 평가 등급을 선택해주세요', 'error'); return; }
+
+  const scores = {};
+  ['s1','s2','s3','s4','s5'].forEach(k => {
+    const el = document.getElementById('input_' + k);
+    scores[k] = el ? (parseInt(el.value) || 0) : 0;
+  });
+  const subTotal = Object.values(scores).reduce((a,b) => a+b, 0);
+
+  let bohunPoint = 0;
+  const bohunCheck = document.getElementById('bohunCheck');
+  const bohunPoints = document.getElementById('bohunPoints');
+  if (bohunCheck && bohunCheck.checked) {
+    bohunPoint = parseInt(bohunPoints?.value) || 0;
+  }
+  const finalScore = subTotal + bohunPoint;
+
+  const evalRecord = {
+    id: Date.now().toString(),
+    applicantId: currentApplicantId,
+    evaluatorName,
+    evalDate,
+    scores,
+    subTotal,
+    bohunPoint,
+    finalScore,
+    grade,
+    comment: document.getElementById('ef_comment')?.value || ''
+  };
+
+  // 기존 평가 있으면 업데이트, 없으면 추가
+  const prevIdx = appData.evaluations.findLastIndex(
+    e => e.applicantId === currentApplicantId && e.evaluatorName === evaluatorName
+  );
+  if (prevIdx >= 0) {
+    appData.evaluations[prevIdx] = { ...appData.evaluations[prevIdx], ...evalRecord, id: appData.evaluations[prevIdx].id };
+  } else {
+    appData.evaluations.push(evalRecord);
+  }
+  saveToStorage();
+
+  // 임시저장은 GAS 전송 안 함 — 최종제출 시에만 Sheets에 기록
+  if (false && localStorage.getItem('gasUrl')) {
+    const a = appData.applicants.find(x => x.id === currentApplicantId);
+    try {
+      sendToGAS(GAS_URL, {
+        projectTitle: appData.projectTitle,
+        applicantName: a?.name || '',
+        jobType: JOB_LABELS[a?.jobType] || '',
+        department: a?.department || '',
+        evaluatorName,
+        evalDate,
+        score1: scores.s1, score2: scores.s2, score3: scores.s3,
+        score4: scores.s4, score5: scores.s5,
+        totalScore: subTotal,
+        bohunPoint,
+        finalScore,
+        grade,
+        comment: evalRecord.comment || ''
+      });
+    } catch(e) { console.log('GAS 전송 오류 (로컬 저장은 완료):', e); }
+  }
+
+  renderApplicantList();
+
+  // 버튼 피드백
+const btn = document.getElementById('saveBtn');
+  btn.textContent = '💾 저장됨!';
+  btn.classList.add('saved');
+  setTimeout(() => {
+    btn.classList.remove('saved');
+    // 폼 초기화 후 버튼 상태도 재적용됨
+    renderEvalForm(appData.applicants.find(x => x.id === currentApplicantId));
+  }, 1500);
+
+  showToast('평가가 저장되었습니다!', 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 대시보드
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateDashboard() {
+  const total = appData.applicants.length;
+  const evaluated = appData.applicants.filter(a => appData.evaluations.some(e => e.applicantId === a.id)).length;
+  const pending = total - evaluated;
+  const evalCount = appData.evaluations.length;
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="stat-label">총 지원자</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card green"><div class="stat-label">평가 완료</div><div class="stat-value">${evaluated}</div></div>
+    <div class="stat-card red"><div class="stat-label">평가 대기</div><div class="stat-value">${pending}</div></div>
+    <div class="stat-card gold"><div class="stat-label">총 평가 건수</div><div class="stat-value">${evalCount}</div></div>
+  `;
+  document.getElementById('dashTitle').textContent = appData.projectTitle + ' — 결과';
+
+  // 지원자별 평균 점수 계산
+  const ranked = appData.applicants.map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    if (evals.length === 0) return { ...a, evalCount: 0, avgScore: 0, bohunPoint: 0, finalScore: 0, grades: [] };
+    const avgScore = evals.reduce((s,e) => s + e.subTotal, 0) / evals.length;
+    const bohunPoint = evals[evals.length-1].bohunPoint || 0;
+    return {
+      ...a,
+      evalCount: evals.length,
+      avgScore: Math.round(avgScore * 10) / 10,
+      bohunPoint,
+      finalScore: Math.round((avgScore + bohunPoint) * 10) / 10,
+      grades: evals.map(e => e.grade),
+      comments: evals.map(e => ({ evaluator: e.evaluatorName, comment: e.comment }))
+    };
+  }).sort((a, b) => b.finalScore - a.finalScore);
+
+  // 순위표 — 평가 완료된 지원자만
+  const tbody = document.getElementById('resultTableBody');
+  const evaluatedList = ranked.filter(a => a.evalCount > 0 && !a.absent);
+  const pendingList = appData.applicants.filter(a => !ranked.find(r => r.id === a.id && r.evalCount > 0) );
+
+  // 평가자 목록 추출 (전체 평가에서 고유 평가자 이름 수집)
+  const allEvaluatorNames = [...new Set(appData.evaluations.map(e => e.evaluatorName))];
+  const maxCols = 6; // 최대 평가자 컬럼 수
+  const evalNames = allEvaluatorNames.slice(0, maxCols);
+
+  // 헤더 평가자 이름 업데이트
+  for (let i = 0; i < maxCols; i++) {
+    const th = document.getElementById('evalCol' + (i+1));
+    if (th) th.textContent = evalNames[i] || '';
+  }
+
+  // 전체 지원자 순위표 (평가 진행된 지원자만, 결시 포함)
+  const allRanked = appData.applicants.map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const avgScore = evals.length > 0 ? evals.reduce((s,e) => s + e.subTotal, 0) / evals.length : 0;
+    const bohunPoint = evals.length > 0 ? (evals[evals.length-1].bohunPoint || 0) : 0;
+    // 결시 여부: evaluation에 isAbsent가 하나라도 있으면 결시로 처리
+    const isAbsent = evals.some(e => e.isAbsent);
+    return {
+      ...a,
+      evals,
+      evalCount: evals.length,
+      avgScore: Math.round(avgScore * 10) / 10,
+      bohunPoint,
+      finalScore: Math.round((avgScore + bohunPoint) * 10) / 10,
+      absent: isAbsent,  // 결시 플래그 설정
+    };
+  }).sort((a,b) => {
+    if (a.absent && !b.absent) return 1;
+    if (!a.absent && b.absent) return -1;
+    return b.finalScore - a.finalScore;
+  }).filter(a => a.evalCount > 0); // 평가 진행된 지원자만 (결시 포함, 미평가 제외)
+
+  // 순위 부여 (결시 제외)
+  let rankCounter = 0;
+  const totalCols = evalNames.length + 7; // 순위+부서+가번호+성명+직군+합계+평균+보훈+최종+비고
+
+  if (allRanked.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" style="padding:30px;text-align:center;color:var(--gray-400);font-size:14px">
+      지원자가 없습니다.
+    </td></tr>`;
+  } else {
+    tbody.innerHTML = allRanked.map((a) => {
+      const hasEval = a.evalCount > 0 && !a.absent;
+      if (hasEval) rankCounter++;
+      const rank = hasEval ? rankCounter : null;
+      const rankBadge = rank === null
+        ? '<span style="color:var(--gray-300)">—</span>'
+        : rank <= 3
+          ? `<span class="rank-badge rank-${rank}">${rank}</span>`
+          : `<span class="rank-badge rank-other">${rank}</span>`;
+
+      // 평가자별 점수 컬럼
+      const evalCols = evalNames.map(name => {
+        const ev = a.evals.find(e => e.evaluatorName === name);
+        if (a.absent) return `<td style="color:var(--red);font-size:12px">결시</td>`;
+        return ev
+          ? `<td style="font-weight:600;color:var(--navy)">${ev.finalScore}</td>`
+          : `<td style="color:var(--gray-300)">—</td>`;
+      }).join('');
+
+      // 빈 컬럼 채우기
+      const emptyCols = Array(maxCols - evalNames.length).fill('<td></td>').join('');
+
+      const sumScore = a.evals.reduce((s,e) => s + e.finalScore, 0);
+      const rowStyle = a.absent ? 'opacity:0.45;background:#fef2f2' : '';
+
+      return `
+      <tr style="${rowStyle}">
+        <td>${rankBadge}</td>
+        <td style="font-size:12px">${a.department || '-'}</td>
+        <td style="font-size:12px;color:var(--gray-500)">${a.num || '-'}</td>
+        <td><strong>${a.name}</strong>${a.absent ? ' <span style="font-size:11px;color:var(--red)">결시</span>' : ''}</td>
+        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>${a.bohun==='yes'?'<span class="applicant-badge badge-bohun" style="margin-left:2px">보훈</span>':''}</td>
+        ${evalCols}${emptyCols}
+        <td style="font-weight:700;color:var(--gray-700)">${a.evalCount > 0 && !a.absent ? sumScore : '—'}</td>
+        <td style="font-weight:700;color:var(--gray-700)">${a.evalCount > 0 && !a.absent ? a.avgScore : '—'}</td>
+        <td>${a.bohunPoint > 0 ? '<span style="color:var(--green);font-weight:600">+' + a.bohunPoint + '</span>' : '—'}</td>
+        <td><strong style="color:var(--navy);font-size:14px">${a.evalCount > 0 && !a.absent ? a.finalScore : '—'}</strong></td>
+        <td><input class="remark-input" value="${appData.remarks[a.id] || ''}"
+          onchange="appData.remarks['${a.id}']=this.value;saveToStorage()" placeholder="비고..."></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // 미평가/결시 현황
+  const pendingTbody = document.getElementById('pendingTableBody');
+  if (pendingTbody) {
+    pendingTbody.innerHTML = appData.applicants.filter(a => {
+      const r = ranked.find(x => x.id === a.id);
+      return !r || r.evalCount === 0;
+    }).map(a => `
+      <tr style="${a.absent ? 'opacity:0.5' : ''}">
+        <td>${a.num || '-'}</td>
+        <td><strong>${a.name}</strong>${a.absent ? ' <span style="color:var(--red);font-size:12px">🚫 결시</span>' : ''}</td>
+        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span></td>
+        <td>${a.department || '-'}</td>
+        <td style="color:var(--gray-400)">${a.absent ? '결시' : '대기중'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:16px">모든 지원자 평가 완료!</td></tr>';
+  }
+
+  // 상세 평가 목록
+  const detailHtml = ranked.filter(a => a.evalCount > 0).map(a => {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+    const items = EVAL_ITEMS[a.jobType];
+    return `
+    <div class="eval-detail-card">
+      <div class="eval-detail-card-header">
+        <strong class="eval-detail-name">${a.name}</strong>
+        <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        <span style="font-size:12px;color:var(--gray-500)">${a.department || ''}</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--navy)">최종 ${a.finalScore}점</span>
+      </div>
+      <div class="eval-detail-body">
+        ${evals.map(ev => `
+          <div style="margin-bottom:12px;padding:10px;background:var(--gray-50);border-radius:6px">
+            <div style="font-size:11px;font-weight:700;color:var(--gray-600);margin-bottom:6px">
+              👤 ${ev.evaluatorName} · ${ev.evalDate}
+              &nbsp;<span style="color:var(--navy)">소계 ${ev.subTotal}점${ev.bohunPoint > 0 ? ' + 보훈 ' + ev.bohunPoint + '점' : ''} = <strong>${ev.finalScore}점</strong></span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px">
+              ${items.map((item, idx) => `
+                <div style="text-align:center">
+                  <div style="font-size:10px;color:var(--gray-500);line-height:1.3">${item.name.slice(0,6)}...</div>
+                  <div style="font-size:16px;font-weight:700;color:var(--navy)">${ev.scores['s'+(idx+1)] || 0}</div>
+                </div>`).join('')}
+            </div>
+            ${ev.comment ? `<div style="font-size:12px;color:var(--gray-600);background:white;padding:8px;border-radius:4px;border-left:3px solid var(--gold)">${ev.comment}</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('evalDetailList').innerHTML = detailHtml || '<div style="color:var(--gray-400);font-size:13px;padding:10px">아직 평가 데이터가 없습니다</div>';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 모달 (지원자 추가/수정)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openAddModal() {
+  pendingPdfData = null;
+  document.getElementById('modalTitle').textContent = '지원자 등록';
+  document.getElementById('editingId').value = '';
+  document.getElementById('mName').value = '';
+  document.getElementById('mDept').value = '';
+  document.getElementById('mJobType').value = 'office';
+  document.getElementById('mBohun').value = 'no';
+  document.getElementById('uploadLabel').textContent = '클릭하여 PDF 파일 선택';
+  document.getElementById('uploadArea').classList.remove('has-file');
+  document.getElementById('applicantModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const a = appData.applicants.find(x => x.id === id);
+  if (!a) return;
+  pendingPdfData = a.pdfData || null;
+  document.getElementById('modalTitle').textContent = '지원자 정보 수정';
+  document.getElementById('editingId').value = id;
+  document.getElementById('mName').value = a.name;
+  document.getElementById('mDept').value = a.department || '';
+  document.getElementById('mJobType').value = a.jobType;
+  document.getElementById('mBohun').value = a.bohun;
+  document.getElementById('mDriveUrl').value = a.driveUrl ? a.driveUrl.replace('/preview', '/view') : '';
+  document.getElementById('applicantModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('applicantModal').classList.remove('open');
+  pendingPdfData = null;
+}
+
+function handlePdfSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  // 파일 객체 자체를 메모리에 보관 (localStorage 저장 안 함)
+  pendingPdfData = file;
+  document.getElementById('uploadLabel').textContent = '✅ ' + file.name;
+  document.getElementById('uploadArea').classList.add('has-file');
+}
+
+function saveApplicant() {
+  const name = document.getElementById('mName').value.trim();
+  const dept = document.getElementById('mDept').value.trim();
+  const jobType = document.getElementById('mJobType').value;
+  const bohun = document.getElementById('mBohun').value;
+  const editingId = document.getElementById('editingId').value;
+
+  if (!name) { showToast('성명을 입력해주세요', 'error'); return; }
+
+  const rawUrl = document.getElementById('mDriveUrl')?.value?.trim() || '';
+  // /view → /preview 로 변환 (iframe 표시용)
+  const driveUrl = rawUrl ? rawUrl.replace('/view', '/preview').replace('?usp=drive_link','').replace('?usp=sharing','') : '';
+
+  if (editingId) {
+    const idx = appData.applicants.findIndex(x => x.id === editingId);
+    if (idx >= 0) {
+      appData.applicants[idx] = { ...appData.applicants[idx], name, department: dept, jobType, bohun };
+      if (driveUrl) appData.applicants[idx].driveUrl = driveUrl;
+    }
+    showToast('정보가 수정되었습니다');
+  } else {
+    const newId = Date.now().toString();
+    appData.applicants.push({ id: newId, name, department: dept, jobType, bohun, driveUrl: driveUrl || null });
+    showToast('지원자가 등록되었습니다', 'success');
+  }
+
+  saveToStorage();
+  renderApplicantList();
+  closeModal();
+}
+
+function deleteApplicant(id) {
+  if (!confirm('이 지원자와 관련 평가 데이터를 모두 삭제할까요?')) return;
+  appData.applicants = appData.applicants.filter(x => x.id !== id);
+  appData.evaluations = appData.evaluations.filter(x => x.applicantId !== id);
+  delete appData.remarks[id];
+  localStorage.removeItem('pdf_' + id);
+  if (currentApplicantId === id) {
+    currentApplicantId = null;
+    document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>👈 좌측에서 지원자를 선택해주세요</p></div>';
+    document.getElementById('evalFooter').style.display = 'none';
+    document.getElementById('evalPanelName').textContent = '지원자를 선택하세요';
+    document.getElementById('evalPanelSub').textContent = '좌측 목록에서 평가할 지원자를 클릭하세요';
+  }
+  saveToStorage();
+  renderApplicantList();
+  showToast('삭제되었습니다');
+}
+
+// PDF 교체 (평가 패널) — Object URL 방식
+function loadPdfFile(e) {
+  const file = e.target.files[0];
+  if (!file || !currentApplicantId) return;
+  const viewer = document.getElementById('pdfViewer');
+  if (viewer.src && viewer.src.startsWith('blob:')) URL.revokeObjectURL(viewer.src);
+  const url = URL.createObjectURL(file);
+  document.getElementById('pdfPlaceholder').style.display = 'none';
+  viewer.style.display = 'block';
+  viewer.src = url;
+  document.getElementById('pdfPanelTitle').textContent = '📄 ' + file.name;
+  showToast('PDF가 열렸습니다 ✅', 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GAS 설정
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function saveGasUrl() {
+  const url = document.getElementById('gasUrl').value.trim();
+  localStorage.setItem('gasUrl', url);
+  showToast('URL이 저장되었습니다', 'success');
+  updateGasStatus(url ? 'saved' : 'empty');
+}
+
+function testGasConnection() {
+  const url = document.getElementById('gasUrl').value.trim();
+  if (!url) { showToast('URL을 먼저 입력해주세요', 'error'); return; }
+
+  updateGasStatus('testing');
+  showToast('테스트 데이터 전송 중...', '');
+
+  // img GET 방식 — CSP 우회
+  sendToGAS(url, {
+    projectTitle: '⚙️ 연결 테스트',
+    applicantName: 'TEST',
+    jobType: '-', department: '-',
+    evaluatorName: '시스템테스트',
+    evalDate: new Date().toISOString().slice(0,10),
+    score1:0, score2:0, score3:0, score4:0, score5:0,
+    totalScore:0, bohunPoint:0, finalScore:0,
+    grade:'테스트', comment:'연결 테스트 행 — 삭제하셔도 됩니다'
+  });
+  updateGasStatus('sent');
+  showToast('전송 완료! 5초 후 Google Sheets에 테스트 행이 추가됐는지 확인해주세요 📊', 'success');
+}
+
+function updateGasStatus(state) {
+  const el = document.getElementById('gasStatus');
+  if (state === 'ok') {
+    el.className = 'settings-status status-ok';
+    el.textContent = '✅ Google Sheets 연동 확인됨! 평가 데이터가 자동으로 저장됩니다.';
+  } else if (state === 'sent') {
+    el.className = 'settings-status status-ok';
+    el.textContent = '📊 테스트 전송 완료! Google Sheets 열어서 새 행이 추가됐는지 확인해주세요. (맨 아래 행에 "연결 테스트" 행이 보이면 성공!)';
+  } else if (state === 'error') {
+    el.className = 'settings-status status-err';
+    el.textContent = '❌ 전송 실패. URL이 올바른지, Apps Script가 "모든 사용자" 권한으로 배포됐는지 확인해주세요.';
+  } else if (state === 'testing') {
+    el.className = 'settings-status status-warn';
+    el.textContent = '🔄 테스트 데이터 전송 중...';
+  } else if (state === 'saved') {
+    el.className = 'settings-status status-warn';
+    el.textContent = '⚠️ URL 저장됨. "연결 테스트" 버튼으로 Sheets에 행이 추가되는지 확인하세요.';
+  } else {
+    el.className = 'settings-status status-warn';
+    el.textContent = '⚠️ 아직 연동 전입니다. 현재는 브라우저 로컬 저장소만 사용 중입니다.';
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 내부기안용 최종결과표 (관리자 전용)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function printFinalReport() {
+  const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'});
+  const title = appData.projectTitle;
+
+  // 실제 평가한 평가위원 목록
+  const evaluatorNames = [...new Set(
+    appData.evaluations.filter(e => e.submitted).map(e => e.evaluatorName)
+  )];
+
+  // 부서별 그룹핑
+  const deptGroups = {};
+  appData.applicants.forEach(a => {
+    const dept = a.deptGroup || a.department || '기타';
+    if (!deptGroups[dept]) deptGroups[dept] = [];
+    deptGroups[dept].push(a);
+  });
+
+  // 지원자별 점수 계산
+  function calcResult(a) {
+    const evals = appData.evaluations.filter(e => e.applicantId === a.id && e.submitted);
+    const scores = {};
+    evaluatorNames.forEach(evName => {
+      const ev = evals.find(e => e.evaluatorName === evName);
+      scores[evName] = ev ? ev.finalScore : null;
+    });
+    const validScores = Object.values(scores).filter(s => s !== null);
+    const sum = validScores.reduce((a,b)=>a+b,0);
+    const avg = validScores.length > 0 ? Math.round((sum/validScores.length)*10)/10 : 0;
+    // 항목별 평균 (동점자 처리용 - 규정 제12조)
+    const itemAvg = [1,2,3,4,5].map(i => {
+      const vals = evals.filter(e=>e.submitted).map(e=>e.scores?.['s'+i]||0);
+      return vals.length > 0 ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+    });
+    return { ...a, scores, sum, avg, evalCount: validScores.length, itemAvg };
+  }
+
+  // 전체 지원자 결과 (결시 포함)
+  const allResults = appData.applicants.map(a => {
+    const r = calcResult(a);
+    // absent 플래그이거나 모든 점수가 0이면 결시로 처리
+    const allZero = r.evalCount > 0 && Object.values(r.scores).every(s => s === 0 || s === null);
+    if (allZero) r.absent = true;
+    return r;
+  });
+
+  // 부서별로 순위 부여 (결시 제외, 규정 제12조 동점자 처리)
+  Object.keys(deptGroups).forEach(dept => {
+    const deptResults = allResults
+      .filter(a => (a.deptGroup || a.department) === dept && !a.absent && a.evalCount > 0)
+      .sort((a,b) => {
+        // 1차: 평균점수
+        if (b.avg !== a.avg) return b.avg - a.avg;
+        // 2차~6차: 평정요소 순서대로 (규정 제12조)
+        for (let i = 0; i < 5; i++) {
+          const diff = (b.itemAvg?.[i]||0) - (a.itemAvg?.[i]||0);
+          if (diff !== 0) return diff;
+        }
+        return 0;
+      });
+    let rank = 1;
+    deptResults.forEach((a, i) => {
+      if (i > 0) {
+        const prev = deptResults[i-1];
+        // 평균과 모든 항목이 완전히 같을 때만 공동순위
+        const allSame = a.avg === prev.avg &&
+          [0,1,2,3,4].every(j => (a.itemAvg?.[j]||0) === (prev.itemAvg?.[j]||0));
+        if (allSame) {
+          a.rank = prev.rank;
+        } else {
+          a.rank = rank;
+        }
+      } else {
+        a.rank = rank;
+      }
+      rank = a.rank + 1;
+    });
+  });
+
+  // 부서별 선발 인원 설정 (기본 1명, 시설관리팀 2명)
+  const HIRE_COUNT = {};
+
+  // 부서별 순위표 생성
+  function buildSection(dept, applicants) {
+    const hireCount = HIRE_COUNT[dept] || 1;
+
+    // 결과 가져오고 순위순으로 정렬 (결시는 맨 뒤)
+    const deptResults = applicants
+      .map(a => allResults.find(r => r.id === a.id))
+      .sort((a, b) => {
+        if (a.absent && !b.absent) return 1;
+        if (!a.absent && b.absent) return -1;
+        if (!a.rank && b.rank) return 1;
+        if (a.rank && !b.rank) return -1;
+        return (a.rank || 99) - (b.rank || 99);
+      });
+
+    // 이 부서 평가한 위원만
+    const deptEvals = evaluatorNames.filter(evName =>
+      appData.evaluations.some(ev => {
+        const ap = appData.applicants.find(x => x.id === ev.applicantId);
+        return ev.evaluatorName === evName && ev.submitted &&
+               (ap?.deptGroup || ap?.department) === dept;
+      })
+    );
+
+    const evHeaders = deptEvals.map(n =>
+      `<th style="padding:5px 8px;border:1px solid #d1d5db;background:#1a2744;color:white;font-size:11px;text-align:center">${n}</th>`
+    ).join('');
+
+    const rows = deptResults.map(a => {
+      const isSelected = !a.absent && a.rank && a.rank <= hireCount;
+      const rankStr = a.absent
+        ? `<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">결시</span>`
+        : !a.rank
+          ? `<span style="color:#9ca3af;font-size:11px">미평가</span>`
+          : isSelected
+            ? `<span style="background:#c9a84c;color:#1a2744;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:700">${a.rank}위 ★</span>`
+            : `<span style="color:#374151;font-weight:600;font-size:11px">${a.rank}위</span>`;
+
+      const scoreCells = deptEvals.map(evName => {
+        const score = a.scores[evName];
+        if (a.absent) return `<td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;background:#fef2f2;color:#991b1b;font-size:11px">결시</td>`;
+        return `<td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;font-size:12px">${score !== null ? score : '—'}</td>`;
+      }).join('');
+
+      const rowStyle = a.absent ? 'background:#fef2f2' : isSelected ? 'background:#fefce8' : '';
+
+      return `<tr style="${rowStyle}">
+        <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center">${rankStr}</td>
+        <td style="padding:5px 8px;border:1px solid #d1d5db;font-size:10px;color:#6b7280;text-align:center">${a.num||''}</td>
+        <td style="padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:12px">
+          ${a.name}
+          ${a.bohun==='yes'?'<span style="font-size:9px;background:#fce7f3;color:#9d174d;padding:1px 4px;border-radius:2px;margin-left:3px">보훈+5</span>':''}
+        </td>
+        ${scoreCells}
+        <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700;font-size:13px;color:#1a2744">
+          ${a.absent ? '<span style="color:#991b1b">결시</span>' : (a.evalCount > 0 ? a.avg+'점' : '—')}
+        </td>
+      </tr>`;
+    }).join('');
+
+    // 선발자 (hireCount명까지)
+    const sortedValid = deptResults.filter(a => !a.absent && a.rank);
+    const winners = sortedValid.filter(a => a.rank <= hireCount);
+    const winnerText = winners.length > 0
+      ? winners.map(w => `${w.name}(${w.avg}점)`).join(', ')
+      : '';
+
+    return `
+      <div style="margin-bottom:18px">
+        <div style="background:#1a2744;padding:6px 12px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#e8c97a;font-weight:700;font-size:13px">${dept} 부문</span>
+          ${winnerText ? `<span style="background:#e8c97a;color:#1a2744;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700">최종 선발 ${hireCount}명: ${winnerText}</span>` : ''}
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px;text-align:center;min-width:60px">순위</th>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px;text-align:center">가번호</th>
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px">성명</th>
+              ${evHeaders}
+              <th style="padding:5px 8px;border:1px solid #d1d5db;background:#374151;color:white;font-size:11px;text-align:center">평균</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  const sections = Object.entries(deptGroups)
+    .map(([dept, applicants]) => buildSection(dept, applicants))
+    .join('');
+
+  const win = window.open('', '_blank', 'width=800,height=1100');
+  win.document.write(`<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="UTF-8">
+<title>최종결과표</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard',sans-serif;padding:24px 32px;background:white;color:#1f2937;font-size:12px}
+  table{font-size:12px;border-collapse:collapse;width:100%}
+  th,td{border:1px solid #d1d5db}
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  @media print{
+    @page{size:A4 portrait;margin:16mm 14mm}
+    body{padding:0;font-size:11px}
+    .no-print{display:none!important}
+    table{font-size:11px}
+  }
+</style>
+</head><body>
+
+<div class="no-print" style="text-align:right;margin-bottom:20px">
+  <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Pretendard',sans-serif">
+    🖨️ 인쇄 / PDF 저장
+  </button>
+</div>
+
+<!-- 헤더 -->
+<div style="text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #1a2744">
+  <div style="font-size:10px;color:#9ca3af;margin-bottom:3px;letter-spacing:2px">삼육대학교  내부결재용</div>
+  <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#1a2744;letter-spacing:1px;margin-bottom:3px">
+    계약직원 채용 면접평가 최종결과표
+  </div>
+  <div style="font-size:11px;color:#6b7280">${title}</div>
+  <div style="font-size:10px;color:#9ca3af;margin-top:3px">작성일: ${today} &nbsp;|&nbsp; 평가위원: ${evaluatorNames.join(' · ')}</div>
+</div>
+
+<!-- 부서별 결과 -->
+${sections}
+
+<div style="margin-top:20px;font-size:11px;color:#9ca3af;text-align:right">
+  본 문서는 삼육대학교 계약직원 채용 면접 평가 시스템에서 자동 생성되었습니다.
+</div>
+
+</body></html>`);
+  win.document.close();
+}
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 결시 관리
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderAbsenceList() {
+  const list = document.getElementById('absenceList');
+  if (!list) return;
+  list.innerHTML = appData.applicants.map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+      padding:10px 14px;border-radius:8px;border:1px solid var(--gray-200);
+      background:${a.absent ? '#fef2f2' : 'white'}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:600;color:${a.absent ? 'var(--red)' : 'var(--gray-800)'}">
+          ${a.num ? a.num + '. ' : ''}${a.name}
+        </span>
+        <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        <span style="font-size:12px;color:var(--gray-500)">${a.department}</span>
+        ${a.absent ? '<span class="applicant-badge" style="background:#fee2e2;color:var(--red)">🚫 결시</span>' : ''}
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--red);font-weight:600">
+        <input type="checkbox" ${a.absent ? 'checked' : ''}
+          onchange="toggleAbsence('${a.id}', this.checked)"
+          style="width:16px;height:16px;cursor:pointer;accent-color:var(--red)">
+        결시
+      </label>
+    </div>
+  `).join('');
+}
+
+function toggleAbsence(id, isAbsent) {
+  const idx = appData.applicants.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  appData.applicants[idx].absent = isAbsent;
+  saveToStorage();
+  renderAbsenceList();
+  renderApplicantList();
+  // 현재 선택된 지원자가 결시 처리되면 패널 초기화
+  if (currentApplicantId === id && isAbsent) {
+    currentApplicantId = null;
+    document.getElementById('evalBody').innerHTML = '<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';
+    document.getElementById('evalFooter').style.display = 'none';
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfPlaceholder').style.display = 'flex';
+  }
+  showToast(isAbsent ? '결시 처리되었습니다' : '결시가 취소되었습니다', isAbsent ? 'error' : 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 선발결과 확인서명서 출력
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Sheets 동기화 (관리자용)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function uploadAllToSheets() {
+  const gasUrl = GAS_URL;
+  if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
+  
+  if (appData.evaluations.length === 0) {
+    showToast('업로드할 평가 데이터가 없습니다', 'error');
+    return;
+  }
+
+  if (!confirm(`총 ${appData.evaluations.length}건의 평가 데이터를 시트로 업로드합니다.\n시트에 이미 데이터가 있다면 중복될 수 있습니다.\n진행하시겠습니까?`)) {
+    return;
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+  
+  for (const ev of appData.evaluations) {
+    const a = appData.applicants.find(x => x.id === ev.applicantId);
+    if (!a) { failCount++; continue; }
+    
+    try {
+      await new Promise((resolve) => {
+        const params = new URLSearchParams();
+        const payload = {
+          projectTitle: appData.projectTitle,
+          applicantName: a.name,
+          jobType: JOB_LABELS[a.jobType] || '',
+          department: a.department || '',
+          evaluatorName: ev.evaluatorName,
+          evalDate: ev.evalDate || '',
+          score1: ev.scores?.s1 || 0,
+          score2: ev.scores?.s2 || 0,
+          score3: ev.scores?.s3 || 0,
+          score4: ev.scores?.s4 || 0,
+          score5: ev.scores?.s5 || 0,
+          totalScore: ev.subTotal || 0,
+          bohunPoint: ev.bohunPoint || 0,
+          finalScore: ev.finalScore || 0,
+          grade: ev.grade || '',
+          comment: (ev.submitted ? '[최종제출] ' : '') + (ev.comment || '')
+        };
+        Object.entries(payload).forEach(([k,v]) => params.append(k, v ?? ''));
+        fetch(gasUrl + '?' + params.toString(), { method: 'GET', mode: 'no-cors' })
+          .then(() => { successCount++; resolve(); })
+          .catch(() => { successCount++; resolve(); }); // no-cors는 에러 안 떠도 성공으로 간주
+      });
+      // 너무 빠르게 요청하면 GAS가 막을 수 있어서 약간 딜레이
+      await new Promise(r => setTimeout(r, 200));
+    } catch(e) {
+      failCount++;
+      console.error('업로드 실패:', e);
+    }
+  }
+  
+  showToast(`✅ 업로드 완료! 성공 ${successCount}건${failCount > 0 ? ', 실패 ' + failCount + '건' : ''}`, 'success');
+}
+
+async function syncFromSheets() {
+  const gasUrl = GAS_URL;
+  if (!gasUrl) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
+
+  const btn = document.getElementById('syncBtn');
+  btn.textContent = '🔄 동기화 중...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(gasUrl);
+    const data = await res.json();
+
+    if (!data || !data.rows || data.rows.length <= 1) {
+      showToast('Sheets에 데이터가 없습니다', 'error');
+      btn.textContent = '🔄 Sheets 동기화'; btn.disabled = false;
+      return;
+    }
+
+    // 헤더 제외 + 유효한 행만
+    const rows = data.rows.slice(1).filter(row => row[5] && row[2]);
+
+    // Sheets 데이터를 평가위원+지원자 기준으로 그룹핑 → 마지막 행(최신)만 사용
+    const latestMap = {};
+    rows.forEach(row => {
+      const key = String(row[5]).trim() + '||' + String(row[2]).trim();
+      latestMap[key] = row; // 나중 행이 덮어씀 = 최신 데이터
+    });
+
+    // 기존 평가 초기화 후 최신 데이터로 재구성
+    appData.evaluations = [];
+
+    Object.values(latestMap).forEach(row => {
+      const evaluatorName = String(row[5] || '').trim();
+      const applicantName = String(row[2] || '').trim();
+      const applicant = appData.applicants.find(a => a.name === applicantName);
+      if (!applicant) return;
+
+      const grade = String(row[15] || '').trim();
+      const comment = String(row[16] || '').trim();
+      const isAbsentRow = grade === '결시' || comment.includes('결시') || comment.includes('[결시]') || comment.includes('면접결시');
+      const evalDate = row[6] ? String(row[6]).slice(0,10) : '';
+
+      appData.evaluations.push({
+        id: Date.now().toString() + Math.random(),
+        applicantId: applicant.id,
+        evaluatorName,
+        evalDate,
+        scores: {
+          s1: Number(row[7])||0,
+          s2: Number(row[8])||0,
+          s3: Number(row[9])||0,
+          s4: Number(row[10])||0,
+          s5: Number(row[11])||0,
+        },
+        subTotal: Number(row[12])||0,
+        bohunPoint: Number(row[13])||0,
+        finalScore: Number(row[14])||0,
+        grade,
+        comment,
+        submitted: true,
+        isAbsent: isAbsentRow,
+        syncedFromSheets: true
+      });
+    });
+
+    saveToStorage();
+    updateDashboard();
+    renderApplicantList();
+    showToast(`✅ 동기화 완료! 총 ${appData.evaluations.length}건 반영`, 'success');
+
+  } catch(e) {
+    showToast('동기화 실패: ' + e.message, 'error');
+    console.error('동기화 오류:', e);
+  }
+
+  btn.textContent = '🔄 Sheets 동기화';
+  btn.disabled = false;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 선발결과 확인서명서 (면접평가표)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function printSignature() {
+  if (!currentUser) { showToast('로그인 후 이용해주세요', 'error'); return; }
+  const isAdmin = currentUser.employeeId === '005923';
+  if (isAdmin) {
+    openSignatureModal();
+  } else {
+    generateSignaturePrint(currentUser.name);
+  }
+}
+
+function openSignatureModal() {
+  const evaluatorNames = [...new Set(appData.evaluations.filter(e=>e.submitted&&!e.isAbsent).map(e => e.evaluatorName))];
+  if (evaluatorNames.length === 0) { showToast('평가 데이터가 없습니다. Sheets 동기화를 먼저 해주세요.', 'error'); return; }
+  const deptList = [...new Set(appData.applicants.map(a => a.deptGroup || a.department))].filter(Boolean);
+  const deptOptions = ['전체', ...deptList].map(d => `<option value="${d}">${d}</option>`).join('');
+
+  let modal = document.getElementById('sigSelectModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'sigSelectModal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <span class="modal-title">📝 면접평가표 출력 설정</span>
+        <button class="modal-close" onclick="document.getElementById('sigSelectModal').classList.remove('open')">×</button>
+      </div>
+      <div class="modal-body" style="gap:14px">
+        <div class="modal-field">
+          <label>부서 선택</label>
+          <select id="sigDept" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:14px;font-family:'Pretendard',sans-serif">
+            ${deptOptions}
+          </select>
+        </div>
+        <div style="background:#eff6ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#1e40af;line-height:1.8">
+          <strong>출력 방식</strong><br>
+          • 부서별로 필터링하여 출력합니다<br>
+          • 해당 부서를 평가한 <strong>심사위원 1명당 1장</strong>씩 출력됩니다
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" style="color:var(--gray-600)" onclick="document.getElementById('sigSelectModal').classList.remove('open')">취소</button>
+        <button class="btn btn-gold" onclick="
+          const dept = document.getElementById('sigDept').value;
+          document.getElementById('sigSelectModal').classList.remove('open');
+          generateSignaturePrint(null, dept === '전체' ? null : dept);
+        ">출력하기</button>
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+function generateSignaturePrint(evaluatorName, deptFilter) {
+  const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'});
+  const title = appData.projectTitle;
+  const gradeMap = {'1':'① 꼭 채용하고 싶다','2':'② 채용하고 싶다','3':'③ 잘 모르겠다','4':'④ 채용하고 싶지 않다','5':'⑤ 절대로 채용해서는 안된다'};
+  const ITEM_NAMES = ['대학 직원으로서의 자세(20점)','전문지식과 그 응용능력(20점)','의사 표현의 정확성과 논리성(20점)','예의·품행 및 성실성(20점)','창의력·의지력 및 발전 가능성(20점)'];
+
+  const evalsByEvaluator = {};
+  appData.evaluations.forEach(ev => {
+    if (!ev.submitted) return;
+    const a = appData.applicants.find(x => x.id === ev.applicantId);
+    if (!a) return;
+    const dept = a.deptGroup || a.department || '기타';
+    if (deptFilter && dept !== deptFilter) return;
+    if (evaluatorName && ev.evaluatorName !== evaluatorName) return;
+    if (!evalsByEvaluator[ev.evaluatorName]) evalsByEvaluator[ev.evaluatorName] = [];
+    if (!evalsByEvaluator[ev.evaluatorName].find(x => x.applicantId === ev.applicantId)) {
+      evalsByEvaluator[ev.evaluatorName].push({ev, applicant: a});
+    }
+  });
+
+  const evaluatorList = Object.keys(evalsByEvaluator);
+  if (evaluatorList.length === 0) { showToast('출력할 데이터가 없습니다.', 'error'); return; }
+
+  function buildPage(evName, items) {
+    // 지원자를 num(SYU-001 등) 기준으로 오름차순 정렬
+    items = [...items].sort((a, b) => {
+      const na = a.applicant?.num || '';
+      const nb = b.applicant?.num || '';
+      return na.localeCompare(nb, undefined, {numeric: true});
+    });
+    const deptName = items[0]?.applicant?.department || '';
+    // 결시 제외
+    const validItems = items.filter(({ev}) => !ev.isAbsent);
+    const absentItems = items.filter(({ev}) => ev.isAbsent);
+
+    const applicantCols = validItems.map(({applicant}) =>
+      `<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#f5f5f5;font-size:12px">
+        ${applicant.name}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}
+      </th>`
+    ).join('') + absentItems.map(({applicant}) =>
+      `<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#fef2f2;font-size:12px;color:#991b1b">
+        ${applicant.name}<br><span style="font-size:9px">결시</span>
+      </th>`
+    ).join('');
+
+    const scoreRows = ITEM_NAMES.map((name, idx) => {
+      const key = 's'+(idx+1);
+      const cells = validItems.map(({ev}) =>
+        `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[key]||0}</td>`
+      ).join('') + absentItems.map(() =>
+        `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;background:#fef2f2;color:#991b1b">결시</td>`
+      ).join('');
+      return `<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa">${name}</td>${cells}</tr>`;
+    }).join('');
+
+    const totalCells = validItems.map(({ev}) =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:14px;color:#1a2744">${ev.subTotal}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`
+    ).join('');
+
+    const hasBohun = validItems.some(({applicant}) => applicant.bohun === 'yes');
+    const bohunRow = hasBohun ? `<tr>
+      <td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fdf2f8;color:#9d174d;font-weight:600">보훈 가점</td>
+      ${validItems.map(({ev,applicant}) =>
+        `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;color:#9d174d">${applicant.bohun==='yes'&&ev.bohunPoint>0?'+'+ev.bohunPoint:'—'}</td>`
+      ).join('')}${absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;background:#fef2f2"></td>`).join('')}
+    </tr>` : '';
+
+    const finalCells = validItems.map(({ev}) =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:15px;color:#1a2744;background:#fefce8">${ev.finalScore}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`
+    ).join('');
+
+    const gradeCells = validItems.map(({ev}) =>
+      `<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;font-size:10px;color:#374151">${gradeMap[ev.grade]||''}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;background:#fef2f2;font-size:10px;color:#991b1b">결시</td>`
+    ).join('');
+
+    const commentCells = validItems.map(({ev}) =>
+      `<td style="padding:8px;border:1px solid #ccc;font-size:11px;color:#555;vertical-align:top">${(ev.comment||'').replace('[최종제출] ','')}</td>`
+    ).join('') + absentItems.map(() =>
+      `<td style="padding:8px;border:1px solid #ccc;background:#fef2f2;font-size:11px;color:#991b1b;text-align:center">면접 결시</td>`
+    ).join('');
+
+    const allCols = validItems.length + absentItems.length;
+
+    return `
+    <div style="page-break-after:always;padding-bottom:20px">
+      <div style="font-size:10px;color:#666;margin-bottom:6px">[별지 제2호 서식]</div>
+      <div style="border-top:3px solid #e53e3e;border-bottom:3px solid #38a169;padding:10px 0;text-align:center;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;letter-spacing:4px">계약직원 채용 면접평가표</div>
+        <div style="font-size:12px;color:#666;margin-top:4px">${title}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
+        <thead>
+          <tr>
+            <th style="padding:8px 12px;border:1px solid #ccc;background:#1a2744;color:#e8c97a;font-size:13px;text-align:left;min-width:180px">지원부서 : ${deptName}</th>
+            ${applicantCols}
+          </tr>
+          <tr>
+            <th style="padding:7px 12px;border:1px solid #ccc;text-align:center;background:#2d4a8a;color:white;font-size:12px">평가항목</th>
+            ${Array(allCols).fill('<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#2d4a8a;color:white;font-size:11px">지 원 자 명</th>').join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${scoreRows}
+          <tr style="background:#e8f0fe">
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px">합계 (100점)</td>
+            ${totalCells}
+          </tr>
+          ${bohunRow}
+          <tr style="background:#fefce8">
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px">최종점수</td>
+            ${finalCells}
+          </tr>
+          <tr>
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#f0f4ff">종합평가 작성란</td>
+            ${gradeCells}
+          </tr>
+          <tr>
+            <td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#fafafa">※ 추천이유 및 기타 소견</td>
+            ${commentCells}
+          </tr>
+        </tbody>
+      </table>
+      <div style="text-align:center;font-size:13px;margin:20px 0 14px;color:#374151">${today}</div>
+      <div style="text-align:right;font-size:14px;padding-right:40px">
+        면접위원 : <strong>${evName}</strong>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(인)
+      </div>
+    </div>`;
+  }
+
+  const allPages = evaluatorList.map(evName => buildPage(evName, evalsByEvaluator[evName])).join('');
+  const deptLabel = deptFilter || '전체';
+
+  const win = window.open('', '_blank', 'width=900,height=1100');
+  win.document.write(`<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="UTF-8"><title>면접평가표 - ${deptLabel}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard',sans-serif;padding:24px;background:white}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @media print{
+    @page{size:A4 landscape;margin:12mm}
+    body{padding:0}
+    .no-print{display:none!important}
+    div[style*="page-break-after"]:last-child{page-break-after:auto!important}
+  }
+</style>
+</head><body>
+<div class="no-print" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f3f4f6;border-radius:8px">
+  <div style="font-size:14px;font-weight:600;color:#1a2744">
+    📋 [${deptLabel}] 심사위원 ${evaluatorList.length}명 &nbsp;—&nbsp; 1인 1장
+    <span style="font-size:12px;color:#6b7280;font-weight:400;margin-left:8px">${evaluatorList.join(' · ')}</span>
+  </div>
+  <button onclick="window.print()" style="background:#1a2744;color:white;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Pretendard',sans-serif">
+    🖨️ 전체 인쇄 / PDF
+  </button>
+</div>
+${allPages}
+</body></html>`);
+  win.document.close();
+}
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 데이터 내보내기/가져오기/초기화
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function exportData() {
+  const data = JSON.stringify(appData, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `면접평가_백업_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('백업 파일이 다운로드되었습니다', 'success');
+}
+
+function importData() {
+  document.getElementById('importFile').click();
+}
+
+function doImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const loaded = JSON.parse(ev.target.result);
+      if (!confirm('현재 데이터를 덮어쓰고 백업 파일을 불러오시겠어요?')) return;
+      appData = loaded;
+      saveToStorage();
+      renderApplicantList();
+      updateDashboard();
+      showToast('백업이 복원되었습니다', 'success');
+    } catch(err) {
+      showToast('파일을 읽을 수 없습니다', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('평가 데이터(점수/의견)를 모두 삭제하시겠어요?\n지원자와 평가위원 정보는 유지됩니다.')) return;
+  if (!confirm('⚠️ Firebase 전체 삭제입니다.\n모든 위원의 평가 데이터가 사라집니다.\n정말 삭제하시겠어요?')) return;
+
+  // 메모리 초기화
+  appData.evaluations = [];
+  appData.remarks = {};
+  appData.applicants.forEach(a => { a.absent = false; });
+
+  // localStorage 초기화
+  try { localStorage.removeItem('interviewApp'); } catch(e) {}
+
+  // Firebase 초기화 (전체 삭제 → 빈 객체로 덮어쓰기)
+  if (window._fbReady) {
+    const db = window._fbDb;
+    const ref = window._fbRef;
+    const set = window._fbSet;
+    set(ref(db, FB_PATH), {
+      evaluations: [],
+      remarks: {},
+      absences: [],
+      projectTitle: appData.projectTitle
+    }).then(() => {
+      showToast('✅ 전체 초기화 완료 (Firebase 포함)', 'success');
+    }).catch(e => {
+      showToast('Firebase 삭제 실패: ' + e.message, 'error');
+    });
+  }
+
+  renderApplicantList();
+  updateDashboard();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 지원자 CSV 관리
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function downloadApplicantTemplate() {
+  const headers = '가번호,성명,부서,직군,보훈여부,구글드라이브링크\n';
+  const example = 'SYU-001,홍길동,생활건강증진원 금연금주클리닉,사무,no,https://drive.google.com/file/d/xxx/preview\n';
+  const csv = headers + example;
+  
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '지원자_양식.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('지원자 양식이 다운로드되었습니다', 'success');
+}
+
+function uploadApplicantData() {
+  document.getElementById('applicantFile').click();
+}
+
+function handleApplicantUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const text = ev.target.result;
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      
+      if (lines.length < 2) {
+        showToast('파일에 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      // 헤더 제외
+      const dataLines = lines.slice(1);
+      const newApplicants = [];
+      
+      dataLines.forEach((line, idx) => {
+        const cols = line.split(',').map(c => c.trim());
+        if (cols.length < 4) return; // 최소 4개 컬럼 필요
+        
+        const [num, name, department, jobTypeStr, bohunStr, driveUrl] = cols;
+        
+        // 직군 매핑
+        let jobType = 'office';
+        if (jobTypeStr === '연구' || jobTypeStr === '연구직') jobType = 'research';
+        else if (jobTypeStr === '노무' || jobTypeStr === '노무직') jobType = 'labor';
+        
+        // 보훈 여부
+        const bohun = (bohunStr === 'yes' || bohunStr === 'Y' || bohunStr === '예' || bohunStr === '보훈') ? 'yes' : 'no';
+        
+        newApplicants.push({
+          id: 'a' + String(Date.now() + idx).slice(-6),
+          num: num || '',
+          name: name || '',
+          department: department || '',
+          deptGroup: department.split(' ').pop() || department, // 마지막 단어를 부서명으로
+          jobType,
+          bohun,
+          driveUrl: driveUrl || ''
+        });
+      });
+      
+      if (newApplicants.length === 0) {
+        showToast('유효한 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      if (!confirm(`${newApplicants.length}명의 지원자를 불러옵니다.\n기존 지원자 목록을 덮어쓰시겠어요?`)) return;
+      
+      appData.applicants = newApplicants;
+      saveToStorage();
+      renderApplicantList();
+      updateDashboard();
+      showToast(`✅ ${newApplicants.length}명의 지원자 정보가 반영되었습니다`, 'success');
+      
+    } catch(err) {
+      console.error(err);
+      showToast('파일을 읽을 수 없습니다. CSV 형식을 확인해주세요.', 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = ''; // 같은 파일 재선택 가능하도록
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 평가위원 CSV 관리
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function downloadEvaluatorTemplate() {
+  const headers = '성명,사번,평가범위\n';
+  const example = '이보람,005923,관리자\n홍길동,000123,전체\n김철수,000456,생활건강증진원\n';
+  const csv = headers + example;
+  
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '평가위원_양식.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('평가위원 양식이 다운로드되었습니다', 'success');
+}
+
+function uploadEvaluatorData() {
+  document.getElementById('evaluatorFile').click();
+}
+
+function handleEvaluatorUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const text = ev.target.result;
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      
+      if (lines.length < 2) {
+        showToast('파일에 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      // 헤더 제외
+      const dataLines = lines.slice(1);
+      const newEvaluators = [];
+      
+      dataLines.forEach(line => {
+        const cols = line.split(',').map(c => c.trim());
+        if (cols.length < 3) return;
+        
+        const [name, employeeId, scopeStr] = cols;
+        
+        // 평가범위 매핑
+        let scope = 'all';
+        let isAdmin = false;
+        
+        if (scopeStr === '관리자') {
+          isAdmin = true;
+          scope = 'all';
+        } else if (scopeStr === '전체' || scopeStr === 'all') {
+          scope = 'all';
+        } else {
+          scope = scopeStr; // 부서명
+        }
+        
+        newEvaluators.push({
+          name: name || '',
+          employeeId: employeeId || '',
+          scope,
+          isAdmin
+        });
+      });
+      
+      if (newEvaluators.length === 0) {
+        showToast('유효한 데이터가 없습니다', 'error');
+        return;
+      }
+      
+      if (!confirm(`${newEvaluators.length}명의 평가위원을 불러옵니다.\n기존 평가위원 목록을 덮어쓰시겠어요?`)) return;
+      
+      appData.evaluators = newEvaluators;
+      saveToStorage();
+      showToast(`✅ ${newEvaluators.length}명의 평가위원 정보가 반영되었습니다`, 'success');
+      
+      // 현재 로그인 사용자가 새 목록에 없으면 로그아웃
+      if (currentUser && !newEvaluators.find(e => e.name === currentUser.name)) {
+        currentUser = null;
+        showTab('eval');
+      }
+      
+    } catch(err) {
+      console.error(err);
+      showToast('파일을 읽을 수 없습니다. CSV 형식을 확인해주세요.', 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 연동 시트 바로가기
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openResultSheet() {
+  const SHEET_ID = '19ZBVRxH8bH5NVF3nSMoS0k_zI75pBth4cYMZDNxsMQE';
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+  window.open(url, '_blank');
+  showToast('결과 시트가 새 탭에서 열립니다', 'success');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 태블릿 네비게이션
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateTabletSelect(visibleApplicants) {
+  const select = document.getElementById('tabletApplicantSelect');
+  if (!select) return;
+  
+  // 결시자 제외한 지원자만 표시
+  const activeApplicants = visibleApplicants.filter(a => !a.absent);
+  
+  select.innerHTML = '<option value="">지원자를 선택하세요</option>' +
+    activeApplicants.map(a => {
+      const evals = appData.evaluations.filter(e => e.applicantId === a.id);
+      const myEval = currentUser ? evals.find(e => e.evaluatorName === currentUser.name) : null;
+      const status = myEval?.submitted ? ' ✅' : myEval ? ' 💾' : '';
+      return `<option value="${a.id}" ${currentApplicantId === a.id ? 'selected' : ''}>
+        ${a.num ? a.num + '. ' : ''}${a.name} (${JOB_LABELS[a.jobType]})${status}
+      </option>`;
+    }).join('');
+  
+  // 이전/다음 버튼 활성화 상태 업데이트
+  updateNavigationButtons(activeApplicants);
+}
+
+function updateNavigationButtons(visibleApplicants) {
+  const prevBtn = document.getElementById('tabletPrevBtn');
+  const nextBtn = document.getElementById('tabletNextBtn');
+  if (!prevBtn || !nextBtn) return;
+  
+  const activeApplicants = visibleApplicants.filter(a => !a.absent);
+  const currentIndex = activeApplicants.findIndex(a => a.id === currentApplicantId);
+  
+  prevBtn.disabled = currentIndex <= 0;
+  nextBtn.disabled = currentIndex >= activeApplicants.length - 1;
+}
+
+function selectApplicantFromTablet(id) {
+  if (!id) return;
+  selectApplicant(id);
+}
+
+function navigatePrevApplicant() {
+  let visible = appData.applicants.filter(a => !a.absent);
+  if (currentUser && currentUser.scope !== 'all') {
+    visible = visible.filter(a => a.deptGroup === currentUser.scope);
+  }
+  
+  const currentIndex = visible.findIndex(a => a.id === currentApplicantId);
+  if (currentIndex > 0) {
+    selectApplicant(visible[currentIndex - 1].id);
+  }
+}
+
+function navigateNextApplicant() {
+  let visible = appData.applicants.filter(a => !a.absent);
+  if (currentUser && currentUser.scope !== 'all') {
+    visible = visible.filter(a => a.deptGroup === currentUser.scope);
+  }
+  
+  const currentIndex = visible.findIndex(a => a.id === currentApplicantId);
+  if (currentIndex >= 0 && currentIndex < visible.length - 1) {
+    selectApplicant(visible[currentIndex + 1].id);
+  }
+}
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 토스트
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2800);
+}
+
+// GAS URL 있으면 상태 업데이트
+window.addEventListener('DOMContentLoaded', () => {
+  init();
+  if (localStorage.getItem('gasUrl')) updateGasStatus('saved');
+  // 초기 탭
+  showTab('eval');
+});
+</script>
+</body>
+</html>
