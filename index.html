@@ -1284,28 +1284,15 @@ function doPost(e) {
 // 평가위원 계정 (사번 = 아이디 & 비밀번호)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const EVALUATORS = [
-  { name: '이보람', employeeId: '005923', scope: 'all',           isAdmin: true  },
-  { name: '김성완', employeeId: '000163', scope: 'all',           isAdmin: false },
-  { name: '김현호', employeeId: '000206', scope: 'all',           isAdmin: false },
-  { name: '박대성', employeeId: '000170', scope: '경비팀',         isAdmin: false },
-  { name: '김진현', employeeId: '000239', scope: '미화팀',         isAdmin: false },
-  { name: '신동석', employeeId: '000122', scope: '교수학습개발센터', isAdmin: false },
-  { name: '이승원', employeeId: '000326', scope: '교수학습개발센터', isAdmin: false },
-  { name: '김재현', employeeId: '000219', scope: '입학팀',         isAdmin: false },
-  { name: '이병재', employeeId: '000288', scope: '취업진로지원센터', isAdmin: false },
+  { name: '이보람', employeeId: '005923', scope: 'all',   isAdmin: true  },
+  { name: '김성완', employeeId: '000163', scope: 'all',   isAdmin: false },
+  { name: '김현호', employeeId: '000206', scope: 'all',   isAdmin: false },
+  { name: '김진현', employeeId: '000239', scope: '미화팀', isAdmin: false },
 ];
 
 const DEFAULT_APPLICANTS = [
-  { id: 'a001', num: 'SYU-001', name: '김남준', department: '사무처 경비팀',                 deptGroup: '경비팀',          jobType: 'labor',    bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1yo9UxwgsHyfDeYViGLhaxQqHMzYe2zr7/preview' },
-  { id: 'a002', num: 'SYU-002', name: '이경자', department: '사무처 시설관리팀 미화',          deptGroup: '미화팀',          jobType: 'labor',    bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1ZQBlaxXhZ7SlciB4PcPArRxeIq99pFxi/preview' },
-  { id: 'a003', num: 'SYU-003', name: '여윤정', department: '입학처 입학팀 입학사정관',        deptGroup: '입학팀',          jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1NqIahVyCwn7I19K-E_AALJZReipIa1Db/preview' },
-  { id: 'a004', num: 'SYU-004', name: '황재영', department: '입학처 입학팀 입학사정관',        deptGroup: '입학팀',          jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1zaCIROEuuOPzmIj_V2vFKL4wd7hGPFI9/preview' },
-  { id: 'a005', num: 'SYU-005', name: '정상목', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1gfccWxmiRSQAugSmG9ZdB_aiLdjIlhD1/preview' },
-  { id: 'a006', num: 'SYU-006', name: '한성지', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1b2iWngLicuOBeC6h-WsRm_jvQeM-r1oU/preview' },
-  { id: 'a007', num: 'SYU-007', name: '홍윤기', department: '교육혁신원 교수학습개발센터',     deptGroup: '교수학습개발센터', jobType: 'research', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1qIXm4PpglxhqD9kLHeq-vMm9SIqBDosZ/preview' },
-  { id: 'a008', num: 'SYU-008', name: '안수민', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1pEN0Hj_s9aztloMQ8tacM0fKz_OsbKPS/preview' },
-  { id: 'a009', num: 'SYU-009', name: '오혜리', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/10syOccQUyXGU17ksWJRaRqMe-O7XiPJa/preview' },
-  { id: 'a010', num: 'SYU-010', name: '최지아', department: '대학일자리본부 취업진로지원센터',  deptGroup: '취업진로지원센터', jobType: 'office',   bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1zYGIBiwxI16VsilAwSDkbubGZCWqUczI/preview' },
+  { id: 'a001', num: 'SYU-001', name: '김태향', department: '사무처 시설관리팀 미화', deptGroup: '미화팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1V5-pHqlUflet48qqnP0F34H5ThCJ4pZK/preview' },
+  { id: 'a002', num: 'SYU-002', name: '유봉기', department: '사무처 시설관리팀 미화', deptGroup: '미화팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/14n_PAgT8xH27hHu1pv_9NhYN-EcFkSur/preview' },
 ];
 
 let currentUser = null; // 로그인한 평가위원
@@ -2562,7 +2549,7 @@ function printFinalReport() {
   });
 
   // 부서별 선발 인원 설정 (기본 1명, 시설관리팀 2명)
-  const HIRE_COUNT = {};
+  const HIRE_COUNT = { '미화팀': 2 };
 
   // 부서별 순위표 생성
   function buildSection(dept, applicants) {
