@@ -1291,8 +1291,8 @@ const EVALUATORS = [
 ];
 
 const DEFAULT_APPLICANTS = [
-  { id: 'a001', num: 'SYU-001', name: '김태향', department: '사무처 시설관리팀 미화', deptGroup: '미화팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1V5-pHqlUflet48qqnP0F34H5ThCJ4pZK/preview' },
-  { id: 'a002', num: 'SYU-002', name: '유봉기', department: '사무처 시설관리팀 미화', deptGroup: '미화팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/14n_PAgT8xH27hHu1pv_9NhYN-EcFkSur/preview' },
+  { id: 'syu2026miwa01', num: 'SYU-001', name: '김태향', department: '사무처 시설관리팀 미화 (손님방)', deptGroup: '미화팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/1V5-pHqlUflet48qqnP0F34H5ThCJ4pZK/preview' },
+  { id: 'syu2026miwa02', num: 'SYU-002', name: '유봉기', department: '사무처 시설관리팀 미화', deptGroup: '미화팀', jobType: 'labor', bohun: 'no', driveUrl: 'https://drive.google.com/file/d/14n_PAgT8xH27hHu1pv_9NhYN-EcFkSur/preview' },
 ];
 
 let currentUser = null; // 로그인한 평가위원
@@ -1500,7 +1500,7 @@ function init() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Firebase 저장/로드 (실시간 DB)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const FB_PATH = 'interview_2026_07'; // 회차별로 경로 구분
+const FB_PATH = 'interview_2026_07_mihwa'; // 회차별로 경로 구분 (미화팀 2명 회차 — 이전 회차와 데이터 분리)
 
 function saveToStorage() {
   // Firebase에만 저장 (localStorage는 사용 안 함)
