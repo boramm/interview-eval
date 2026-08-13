@@ -25,7 +25,7 @@
   window._fbDb = db; window._fbRef = ref; window._fbSet = set;
   window._fbGet = get; window._fbOnValue = onValue; window._fbUpdate = update;
   window._fbRemove = remove; window._fbReady = true;
-  window.dispatchEvent(new Event('firebaseReady'));
+  // 폴링 방식 사용으로 dispatchEvent 불필요
 </script>
 <style>
   :root {
@@ -70,7 +70,7 @@
   .applicant-name{font-size:14px;font-weight:600;color:var(--gray-800);}
   .applicant-meta{font-size:11px;color:var(--gray-500);margin-top:2px;}
   .applicant-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600;margin-top:4px;}
-  .badge-labor{background:#fef3c7;color:#92400e;}.badge-office{background:#dbeafe;color:#1e40af;}.badge-research{background:#d1fae5;color:#065f46;}.badge-bohun{background:#fce7f3;color:#9d174d;margin-left:4px;}
+  .badge-labor{background:#fef3c7;color:#92400e;}.badge-office{background:#dbeafe;color:#1e40af;}.badge-research{background:#d1fae5;color:#065f46;}.badge-tech{background:#e0e7ff;color:#3730a3;}.badge-bohun{background:#fce7f3;color:#9d174d;margin-left:4px;}
   .card-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;gap:4px;}
   .applicant-card:hover .card-actions{display:flex;}
   .icon-btn{width:24px;height:24px;border-radius:4px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all 0.15s;}
@@ -469,7 +469,7 @@
       <div class="modal-field"><label>성명 *</label><input type="text" id="mName" placeholder="홍길동"></div>
       <div class="modal-field"><label>지원부서 *</label><input type="text" id="mDept" placeholder="예: 총무인사팀"></div>
       <div class="modal-field"><label>직군 *</label>
-        <select id="mJobType"><option value="office">사무직</option><option value="labor">노무직</option><option value="research">연구직</option></select>
+        <select id="mJobType"><option value="office">사무직</option><option value="tech">기술직</option><option value="labor">노무직</option><option value="research">연구직</option></select>
       </div>
       <div class="modal-field"><label>보훈대상자 여부</label>
         <select id="mBohun"><option value="no">해당없음</option><option value="yes">해당</option></select>
@@ -505,12 +505,12 @@ const EVALUATORS = [
 const DEFAULT_APPLICANTS = [
   { id:'a001', num:'SYU-001', name:'강다운', department:'교무처 교양교육원',       deptGroup:'교양교육원',    jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/18ntZ7KkQaZYStnwBg3oiB7VcOZl_bZcw/preview' },
   { id:'a002', num:'SYU-002', name:'정민지', department:'교무처 교양교육원',       deptGroup:'교양교육원',    jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1-xHadj5bvBISEs1g1K6OYT_HaXssPJqj/preview' },
-  { id:'a003', num:'SYU-003', name:'윤병림', department:'사무처 총무인사팀 수송',   deptGroup:'수송',          jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1SC8-1gKN7T687eHhzg7-m_BS7QTCPunF/preview' },
-  { id:'a004', num:'SYU-004', name:'이종성', department:'사무처 총무인사팀 수송',   deptGroup:'수송',          jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1W6WRaoXFNyOMkFq0SJ-_9muvL5K1exWt/preview' },
+  { id:'a003', num:'SYU-003', name:'윤병림', department:'사무처 총무인사팀 수송',   deptGroup:'수송',          jobType:'tech',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1SC8-1gKN7T687eHhzg7-m_BS7QTCPunF/preview' },
+  { id:'a004', num:'SYU-004', name:'이종성', department:'사무처 총무인사팀 수송',   deptGroup:'수송',          jobType:'tech',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1W6WRaoXFNyOMkFq0SJ-_9muvL5K1exWt/preview' },
   { id:'a005', num:'SYU-005', name:'김주성', department:'국제처 예비군대대 업무대행', deptGroup:'예비군',       jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/15wHw3mvMhN49hzz1ExYq4Wzcr50UK69V/preview' },
-  { id:'a006', num:'SYU-006', name:'강재우', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'research', bohun:'no', driveUrl:'https://drive.google.com/file/d/1t1SVGCvOdEFI0zmbqipEXBZkMtLFTJx-/preview' },
-  { id:'a007', num:'SYU-007', name:'임화영', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'research', bohun:'no', driveUrl:'https://drive.google.com/file/d/1pD9idvrXAPDJYUgAmwF3g8lz-FB5Aobm/preview' },
-  { id:'a008', num:'SYU-008', name:'한규리', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'research', bohun:'no', driveUrl:'https://drive.google.com/file/d/18rwJLs0YnAp3avRAunEQ2ehrD_-2H8ec/preview' },
+  { id:'a006', num:'SYU-006', name:'강재우', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1t1SVGCvOdEFI0zmbqipEXBZkMtLFTJx-/preview' },
+  { id:'a007', num:'SYU-007', name:'임화영', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1pD9idvrXAPDJYUgAmwF3g8lz-FB5Aobm/preview' },
+  { id:'a008', num:'SYU-008', name:'한규리', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/18rwJLs0YnAp3avRAunEQ2ehrD_-2H8ec/preview' },
   { id:'a009', num:'SYU-009', name:'김하은', department:'대학일자리본부',           deptGroup:'대학일자리본부',  jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/17PSjyW9o2mzpE_94mIGwSwAujcS1vowY/preview' },
   { id:'a010', num:'SYU-010', name:'이현우', department:'대학일자리본부',           deptGroup:'대학일자리본부',  jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1n2XwW4aNXULhQItz7CSG0S_Rw7K-AcXp/preview' },
   { id:'a011', num:'SYU-011', name:'장다영', department:'대학일자리본부',           deptGroup:'대학일자리본부',  jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1njhtfHNA1ladC4Twoh2k-oTHPEo5StpF/preview' },
@@ -523,10 +523,11 @@ let currentApplicantId = null;
 const EVAL_ITEMS = {
   office:   [{key:'s1',name:'대학직원으로서의 자세',max:20},{key:'s2',name:'전문지식과 그 응용능력',max:20},{key:'s3',name:'의사 표현의 정확성과 논리성',max:20},{key:'s4',name:'예의·품행 및 성실성',max:20},{key:'s5',name:'창의력·의지력 및 발전가능성',max:20}],
   labor:    [{key:'s1',name:'대학직원으로서의 자세',max:20},{key:'s2',name:'전문지식과 그 응용능력',max:20},{key:'s3',name:'의사 표현의 정확성과 논리성',max:20},{key:'s4',name:'예의·품행 및 성실성',max:20},{key:'s5',name:'창의력·의지력 및 발전가능성',max:20}],
-  research: [{key:'s1',name:'대학직원으로서의 자세',max:20},{key:'s2',name:'전문지식과 그 응용능력',max:20},{key:'s3',name:'의사 표현의 정확성과 논리성',max:20},{key:'s4',name:'예의·품행 및 성실성',max:20},{key:'s5',name:'창의력·의지력 및 발전가능성',max:20}]
+  research: [{key:'s1',name:'대학직원으로서의 자세',max:20},{key:'s2',name:'전문지식과 그 응용능력',max:20},{key:'s3',name:'의사 표현의 정확성과 논리성',max:20},{key:'s4',name:'예의·품행 및 성실성',max:20},{key:'s5',name:'창의력·의지력 및 발전가능성',max:20}],
+  tech:     [{key:'s1',name:'대학직원으로서의 자세',max:20},{key:'s2',name:'전문지식과 그 응용능력',max:20},{key:'s3',name:'의사 표현의 정확성과 논리성',max:20},{key:'s4',name:'예의·품행 및 성실성',max:20},{key:'s5',name:'창의력·의지력 및 발전가능성',max:20}]
 };
-const JOB_LABELS = {office:'사무직',labor:'노무직',research:'연구직'};
-const JOB_BADGES = {office:'badge-office',labor:'badge-labor',research:'badge-research'};
+const JOB_LABELS = {office:'사무직',tech:'기술직',labor:'노무직',research:'연구직'};
+const JOB_BADGES = {office:'badge-office',tech:'badge-tech',labor:'badge-labor',research:'badge-research'};
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
 const FB_PATH = 'interview_2026_08';
 
@@ -673,20 +674,17 @@ function saveToStorage() {
 function loadFromStorage() { appData.evaluations=[]; appData.remarks={}; }
 
 function startFirebaseListener() {
-  // 이미 준비됐으면 바로 시작
-  if (window._fbReady) {
-    _doStartFirebaseListener();
-    return;
-  }
-  // 아직 준비 안 됐으면: 이벤트 + 폴링 병행
-  window.addEventListener('firebaseReady', () => _doStartFirebaseListener(), {once:true});
-  // 혹시 이벤트를 이미 놓쳤을 경우를 위한 폴링 (100ms 간격, 최대 10초)
+  // 폴링 방식: 50ms마다 _fbReady 확인 (type=module 비동기 타이밍 문제 해결)
+  if (window._fbReady) { _doStartFirebaseListener(); return; }
   let tries = 0;
   const poll = setInterval(() => {
-    tries++;
-    if (window._fbReady) { clearInterval(poll); _doStartFirebaseListener(); }
-    if (tries > 100) clearInterval(poll); // 10초 후 포기
-  }, 100);
+    if (window._fbReady) { clearInterval(poll); _doStartFirebaseListener(); return; }
+    if (++tries > 200) { // 10초 대기 후 포기
+      clearInterval(poll);
+      const fbStatus = document.getElementById('fbStatus');
+      if (fbStatus) { fbStatus.textContent = '❌ 연결 실패'; fbStatus.style.color = '#fca5a5'; }
+    }
+  }, 50);
 }
 
 function _doStartFirebaseListener() {
