@@ -491,15 +491,29 @@
 
 <script>
 const EVALUATORS = [
-  { name: '이보람', employeeId: '005923', scope: 'all', isAdmin: true  },
-  { name: '김성완', employeeId: '000163', scope: 'all', isAdmin: false },
-  { name: '김현호', employeeId: '000206', scope: 'all', isAdmin: false },
-  { name: '김진현', employeeId: '000239', scope: 'all', isAdmin: false },
+  { name: '이보람', employeeId: '005923', scope: 'all',          isAdmin: true  },
+  { name: '김성완', employeeId: '000163', scope: 'all',          isAdmin: false },
+  { name: '김현호', employeeId: '000206', scope: 'all',          isAdmin: false },
+  { name: '김명희', employeeId: '000673', scope: '교양교육원',    isAdmin: false },
+  { name: '홍승표', employeeId: '000216', scope: '수송',          isAdmin: false },
+  { name: '김두한', employeeId: '000203', scope: '예비군',        isAdmin: false },
+  { name: '신동석', employeeId: '000122', scope: '원격교육지원센터', isAdmin: false },
+  { name: '이승원', employeeId: '000326', scope: '원격교육지원센터', isAdmin: false },
+  { name: '서경현', employeeId: '000215', scope: '대학일자리본부', isAdmin: false },
 ];
 
 const DEFAULT_APPLICANTS = [
-  { id:'syu2026miwa01', num:'SYU-001', name:'김태향', department:'사무처 시설관리팀 미화 (손님방)', deptGroup:'미화팀_손님방', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/1V5-pHqlUflet48qqnP0F34H5ThCJ4pZK/preview' },
-  { id:'syu2026miwa02', num:'SYU-002', name:'유봉기', department:'사무처 시설관리팀 미화', deptGroup:'미화팀_일반', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/14n_PAgT8xH27hHu1pv_9NhYN-EcFkSur/preview' },
+  { id:'a001', num:'SYU-001', name:'강다운', department:'교무처 교양교육원',       deptGroup:'교양교육원',    jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/18ntZ7KkQaZYStnwBg3oiB7VcOZl_bZcw/preview' },
+  { id:'a002', num:'SYU-002', name:'정민지', department:'교무처 교양교육원',       deptGroup:'교양교육원',    jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1-xHadj5bvBISEs1g1K6OYT_HaXssPJqj/preview' },
+  { id:'a003', num:'SYU-003', name:'윤병림', department:'사무처 총무인사팀 수송',   deptGroup:'수송',          jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1SC8-1gKN7T687eHhzg7-m_BS7QTCPunF/preview' },
+  { id:'a004', num:'SYU-004', name:'이종성', department:'사무처 총무인사팀 수송',   deptGroup:'수송',          jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1W6WRaoXFNyOMkFq0SJ-_9muvL5K1exWt/preview' },
+  { id:'a005', num:'SYU-005', name:'김주성', department:'국제처 예비군대대 업무대행', deptGroup:'예비군',       jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/15wHw3mvMhN49hzz1ExYq4Wzcr50UK69V/preview' },
+  { id:'a006', num:'SYU-006', name:'강재우', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'research', bohun:'no', driveUrl:'https://drive.google.com/file/d/1t1SVGCvOdEFI0zmbqipEXBZkMtLFTJx-/preview' },
+  { id:'a007', num:'SYU-007', name:'임화영', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'research', bohun:'no', driveUrl:'https://drive.google.com/file/d/1pD9idvrXAPDJYUgAmwF3g8lz-FB5Aobm/preview' },
+  { id:'a008', num:'SYU-008', name:'한규리', department:'교육혁신원 원격교육지원센터', deptGroup:'원격교육지원센터', jobType:'research', bohun:'no', driveUrl:'https://drive.google.com/file/d/18rwJLs0YnAp3avRAunEQ2ehrD_-2H8ec/preview' },
+  { id:'a009', num:'SYU-009', name:'김하은', department:'대학일자리본부',           deptGroup:'대학일자리본부',  jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/17PSjyW9o2mzpE_94mIGwSwAujcS1vowY/preview' },
+  { id:'a010', num:'SYU-010', name:'이현우', department:'대학일자리본부',           deptGroup:'대학일자리본부',  jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1n2XwW4aNXULhQItz7CSG0S_Rw7K-AcXp/preview' },
+  { id:'a011', num:'SYU-011', name:'장다영', department:'대학일자리본부',           deptGroup:'대학일자리본부',  jobType:'office',   bohun:'no', driveUrl:'https://drive.google.com/file/d/1njhtfHNA1ladC4Twoh2k-oTHPEo5StpF/preview' },
 ];
 
 let currentUser = null;
@@ -514,7 +528,7 @@ const EVAL_ITEMS = {
 const JOB_LABELS = {office:'사무직',labor:'노무직',research:'연구직'};
 const JOB_BADGES = {office:'badge-office',labor:'badge-labor',research:'badge-research'};
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
-const FB_PATH = 'interview_2026_07';
+const FB_PATH = 'interview_2026_08';
 
 function sendToGAS(url, data) {
   try {
