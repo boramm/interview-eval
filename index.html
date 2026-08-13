@@ -8,9 +8,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>계약직원 면접 평가 시스템</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-<!-- Firebase SDK (compat 버전 - 전역 객체 방식, import 타이밍 문제 없음) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- Firebase SDK 9.x compat (전역 객체 방식) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyCa9KHSlThpYcpgXHnwI6J6UkA-Q-vCzpg",
@@ -21,17 +21,21 @@
     messagingSenderId: "90039452918",
     appId: "1:90039452918:web:f1143230ab17a65b8f58d7"
   };
-  firebase.initializeApp(firebaseConfig);
-  const _fbDB = firebase.database();
-
-  window._fbDb  = _fbDB;
-  window._fbRef = (db, path) => db.ref(path);
-  window._fbSet = (ref, data) => ref.set(data);
-  window._fbGet = (ref) => ref.once('value');
-  window._fbOnValue = (ref, cb, errCb) => { ref.on('value', cb, errCb); };
-  window._fbUpdate = (ref, data) => ref.update(data);
-  window._fbRemove = (ref) => ref.remove();
-  window._fbReady = true;
+  try {
+    firebase.initializeApp(firebaseConfig);
+    const _fbDB = firebase.database();
+    window._fbDb       = _fbDB;
+    window._fbRef      = (db, path) => db.ref(path);
+    window._fbSet      = (ref, data) => ref.set(data);
+    window._fbGet      = (ref) => ref.once('value');
+    window._fbOnValue  = (ref, cb, errCb) => { ref.on('value', cb, errCb); };
+    window._fbUpdate   = (ref, data) => ref.update(data);
+    window._fbRemove   = (ref) => ref.remove();
+    window._fbReady    = true;
+  } catch(e) {
+    console.error('Firebase 초기화 실패:', e);
+    window._fbReady = false;
+  }
 </script>
 <style>
   :root {
@@ -263,7 +267,7 @@
     <div class="header-logo">삼육대학교</div>
     <div class="header-divider"></div>
     <div class="header-title-wrap">
-      <input type="text" id="projectTitle" value="2026년 7월 1일부 계약직 면접" title="클릭하여 제목 수정">
+      <input type="text" id="projectTitle" value="2026년 9월 1일부 계약직 면접" title="클릭하여 제목 수정">
       <span class="edit-icon">✏️</span>
     </div>
   </div>
@@ -523,7 +527,7 @@ const DEFAULT_APPLICANTS = [
 ];
 
 let currentUser = null;
-let appData = { projectTitle:'2026년 7월 1일부 계약직 면접', applicants:DEFAULT_APPLICANTS, evaluations:[], remarks:{} };
+let appData = { projectTitle:'2026년 9월 1일부 계약직 면접', applicants:DEFAULT_APPLICANTS, evaluations:[], remarks:{} };
 let currentApplicantId = null;
 
 const EVAL_ITEMS = {
