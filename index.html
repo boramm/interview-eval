@@ -8,9 +8,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>계약직원 면접 평가 시스템</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+<!-- Firebase SDK (compat 버전 - 전역 객체 방식, import 타이밍 문제 없음) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
   const firebaseConfig = {
     apiKey: "AIzaSyCa9KHSlThpYcpgXHnwI6J6UkA-Q-vCzpg",
     authDomain: "syu-interview.firebaseapp.com",
@@ -20,12 +21,17 @@
     messagingSenderId: "90039452918",
     appId: "1:90039452918:web:f1143230ab17a65b8f58d7"
   };
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  window._fbDb = db; window._fbRef = ref; window._fbSet = set;
-  window._fbGet = get; window._fbOnValue = onValue; window._fbUpdate = update;
-  window._fbRemove = remove; window._fbReady = true;
-  // 폴링 방식 사용으로 dispatchEvent 불필요
+  firebase.initializeApp(firebaseConfig);
+  const _fbDB = firebase.database();
+
+  window._fbDb  = _fbDB;
+  window._fbRef = (db, path) => db.ref(path);
+  window._fbSet = (ref, data) => ref.set(data);
+  window._fbGet = (ref) => ref.once('value');
+  window._fbOnValue = (ref, cb, errCb) => { ref.on('value', cb, errCb); };
+  window._fbUpdate = (ref, data) => ref.update(data);
+  window._fbRemove = (ref) => ref.remove();
+  window._fbReady = true;
 </script>
 <style>
   :root {
