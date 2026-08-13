@@ -8,34 +8,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>계약직원 면접 평가 시스템</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-<!-- Firebase SDK 9.x compat (전역 객체 방식) -->
+<!-- Firebase SDK 9.x compat -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCa9KHSlThpYcpgXHnwI6J6UkA-Q-vCzpg",
-    authDomain: "syu-interview.firebaseapp.com",
-    databaseURL: "https://syu-interview-default-rtdb.firebaseio.com",
-    projectId: "syu-interview",
-    storageBucket: "syu-interview.firebasestorage.app",
-    messagingSenderId: "90039452918",
-    appId: "1:90039452918:web:f1143230ab17a65b8f58d7"
-  };
-  try {
-    firebase.initializeApp(firebaseConfig);
-    const _fbDB = firebase.database();
-    window._fbDb       = _fbDB;
-    window._fbRef      = (db, path) => db.ref(path);
-    window._fbSet      = (ref, data) => ref.set(data);
-    window._fbGet      = (ref) => ref.once('value');
-    window._fbOnValue  = (ref, cb, errCb) => { ref.on('value', cb, errCb); };
-    window._fbUpdate   = (ref, data) => ref.update(data);
-    window._fbRemove   = (ref) => ref.remove();
-    window._fbReady    = true;
-  } catch(e) {
-    console.error('Firebase 초기화 실패:', e);
-    window._fbReady = false;
-  }
+  (function() {
+    var config = {
+      apiKey: "AIzaSyCa9KHSlThpYcpgXHnwI6J6UkA-Q-vCzpg",
+      authDomain: "syu-interview.firebaseapp.com",
+      databaseURL: "https://syu-interview-default-rtdb.firebaseio.com",
+      projectId: "syu-interview",
+      storageBucket: "syu-interview.firebasestorage.app",
+      messagingSenderId: "90039452918",
+      appId: "1:90039452918:web:f1143230ab17a65b8f58d7"
+    };
+
+    function setStatus(msg, color) {
+      // 로드 후 상태바에 표시 (DOM 준비 전이면 저장해 뒀다가 나중에 표시)
+      window._fbStatusMsg = { msg: msg, color: color };
+      var el = document.getElementById('fbStatus');
+      if (el) { el.textContent = msg; el.style.color = color; }
+    }
+
+    try {
+      // firebase 객체 존재 확인
+      if (typeof firebase === 'undefined') {
+        throw new Error('firebase SDK 로드 실패 (CDN 차단 또는 네트워크 오류)');
+      }
+      firebase.initializeApp(config);
+      var db = firebase.database();
+
+      window._fbDb      = db;
+      window._fbRef     = function(d, path) { return d.ref(path); };
+      window._fbSet     = function(ref, data) { return ref.set(data); };
+      window._fbGet     = function(ref) { return ref.once('value'); };
+      window._fbOnValue = function(ref, cb, errCb) { ref.on('value', cb, errCb); };
+      window._fbUpdate  = function(ref, data) { return ref.update(data); };
+      window._fbRemove  = function(ref) { return ref.remove(); };
+      window._fbReady   = true;
+
+      // 연결 테스트: .info/connected 감시
+      db.ref('.info/connected').on('value', function(snap) {
+        if (snap.val() === true) {
+          setStatus('🔥 실시간 연결됨', '#86efac');
+          var el = document.getElementById('fbStatus');
+          if (el) { el.style.background = 'rgba(34,197,94,0.2)'; }
+        } else {
+          setStatus('⏳ Firebase 연결 중...', 'rgba(255,255,255,0.5)');
+        }
+      });
+
+    } catch(e) {
+      console.error('Firebase 초기화 오류:', e);
+      window._fbReady = false;
+      window._fbError = e.message;
+      setStatus('❌ ' + e.message, '#fca5a5');
+    }
+  })();
 </script>
 <style>
   :root {
@@ -273,7 +302,7 @@
   </div>
   <div class="header-right" style="gap:12px">
     <div id="userInfo" style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px">
-      <span id="fbStatus" style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5)">🔄 Firebase 연결 중...</span>
+      <span id="fbStatus" style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5)">🔄 연결 중...</span>
       <span id="userName" style="font-weight:600;color:var(--gold-light)"></span>
       <span id="userTitle" style="opacity:0.7"></span>
     </div>
@@ -403,6 +432,28 @@
           <button class="btn btn-navy btn-sm" onclick="testGasConnection()">🔗 연결 테스트</button>
           <button class="btn btn-green btn-sm" onclick="saveGasUrl()">저장</button>
         </div>
+      </div>
+
+      <!-- Firebase 보안 규칙 안내 -->
+      <div class="settings-card" id="fbRulesCard">
+        <div class="settings-card-title">🔥 Firebase 연결 안 될 때 확인사항</div>
+        <div style="font-size:12px;color:var(--gray-700);line-height:1.9;background:var(--gray-50);border-radius:8px;padding:14px;">
+          <strong>1. Firebase 콘솔 → Realtime Database → 규칙 탭</strong><br>
+          아래 규칙으로 설정되어 있어야 합니다:<br>
+          <div style="background:#1e1e1e;color:#86efac;border-radius:6px;padding:10px;margin:8px 0;font-family:monospace;font-size:12px;">
+{<br>
+&nbsp;&nbsp;"rules": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;".read": true,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;".write": true<br>
+&nbsp;&nbsp;}<br>
+}
+          </div>
+          <strong>2. Firebase 콘솔 → Realtime Database</strong><br>
+          데이터베이스가 생성되어 있어야 합니다 (미생성 시 연결 불가)<br><br>
+          <strong>3. 현재 Firebase 상태:</strong><br>
+          <span id="fbDebugStatus">확인 중...</span>
+        </div>
+        <button class="btn btn-navy btn-sm" style="margin-top:10px" onclick="checkFirebaseDebug()">🔍 상태 직접 확인</button>
       </div>
 
       <!-- 관리자 전용: 결시 관리 -->
@@ -538,7 +589,7 @@ const EVAL_ITEMS = {
 };
 const JOB_LABELS = {office:'사무직',tech:'기술직',labor:'노무직',research:'연구직'};
 const JOB_BADGES = {office:'badge-office',tech:'badge-tech',labor:'badge-labor',research:'badge-research'};
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwYbnxdx2sXjqH7ZQBROO9mTuVx0vF03AFeduO8J0L389nzY6tQ9UyCddQeNfrbRgCtPA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzrGmTZNRnF43n2e5Q6oIRNLqCUNC_2i5HMPgYfj-N4xT1SXQUq02rlptDuGi9j-NYxFA/exec';
 const FB_PATH = 'interview_2026_08';
 
 function sendToGAS(url, data) {
@@ -684,17 +735,25 @@ function saveToStorage() {
 function loadFromStorage() { appData.evaluations=[]; appData.remarks={}; }
 
 function startFirebaseListener() {
-  // 폴링 방식: 50ms마다 _fbReady 확인 (type=module 비동기 타이밍 문제 해결)
-  if (window._fbReady) { _doStartFirebaseListener(); return; }
-  let tries = 0;
-  const poll = setInterval(() => {
-    if (window._fbReady) { clearInterval(poll); _doStartFirebaseListener(); return; }
-    if (++tries > 200) { // 10초 대기 후 포기
-      clearInterval(poll);
-      const fbStatus = document.getElementById('fbStatus');
-      if (fbStatus) { fbStatus.textContent = '❌ 연결 실패'; fbStatus.style.color = '#fca5a5'; }
-    }
-  }, 50);
+  // compat 방식: 동기 로드이므로 _fbReady가 이미 세팅돼 있음
+  if (window._fbReady) {
+    _doStartFirebaseListener();
+  } else {
+    // 혹시 모를 상황 대비 짧은 폴링
+    var tries = 0;
+    var poll = setInterval(function() {
+      if (window._fbReady) { clearInterval(poll); _doStartFirebaseListener(); return; }
+      if (++tries > 100) {
+        clearInterval(poll);
+        var el = document.getElementById('fbStatus');
+        if (el) {
+          var errMsg = window._fbError || 'Firebase SDK 로드 실패';
+          el.textContent = '❌ ' + errMsg;
+          el.style.color = '#fca5a5';
+        }
+      }
+    }, 100);
+  }
 }
 
 function _doStartFirebaseListener() {
@@ -704,7 +763,7 @@ function _doStartFirebaseListener() {
   const {_fbDb:db,_fbRef:ref,_fbOnValue:onValue} = window;
   onValue(ref(db, FB_PATH), (snapshot) => {
     const fbStatus = document.getElementById('fbStatus');
-    if (fbStatus) { fbStatus.textContent='🔥 실시간 연결됨'; fbStatus.style.background='rgba(34,197,94,0.2)'; fbStatus.style.color='#86efac'; }
+    // fbStatus는 .info/connected 리스너에서 업데이트
     const data = snapshot.val();
     if (!data) {
       appData.evaluations=[]; appData.remarks={};
@@ -1600,6 +1659,32 @@ function navigateNextApplicant() {
   if(currentUser&&currentUser.scope!=='all')visible=visible.filter(a=>a.deptGroup===currentUser.scope);
   const idx=visible.findIndex(a=>a.id===currentApplicantId);
   if(idx>=0&&idx<visible.length-1)selectApplicant(visible[idx+1].id);
+}
+
+function checkFirebaseDebug() {
+  var el = document.getElementById('fbDebugStatus');
+  if (!el) return;
+  if (typeof firebase === 'undefined') {
+    el.innerHTML = '<span style="color:red">❌ firebase 객체 없음 — CDN 차단됨 (네트워크/방화벽 문제)</span>';
+    return;
+  }
+  el.innerHTML = '✅ firebase SDK 로드됨<br>';
+  if (!window._fbReady) {
+    el.innerHTML += '<span style="color:red">❌ _fbReady = false — initializeApp 실패</span><br>';
+    el.innerHTML += window._fbError ? '오류: ' + window._fbError : '';
+    return;
+  }
+  el.innerHTML += '✅ initializeApp 성공<br>';
+  // .info/connected 직접 읽기
+  window._fbDb.ref('.info/connected').once('value').then(function(snap) {
+    if (snap.val()) {
+      el.innerHTML += '✅ Realtime DB 연결됨';
+    } else {
+      el.innerHTML += '<span style="color:orange">⚠️ DB 연결 대기 중 (보안 규칙 또는 네트워크 확인 필요)</span>';
+    }
+  }).catch(function(e) {
+    el.innerHTML += '<span style="color:red">❌ DB 연결 실패: ' + e.message + '</span>';
+  });
 }
 
 let toastTimer;
