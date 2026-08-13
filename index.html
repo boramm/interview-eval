@@ -596,8 +596,17 @@ function sendToGAS(url, data) {
   try {
     const params = new URLSearchParams();
     Object.entries(data).forEach(([k,v]) => params.append(k, v ?? ''));
-    fetch((url||GAS_URL)+'?'+params.toString(), {method:'GET',mode:'no-cors'}).catch(()=>{});
-  } catch(e) {}
+    const fullUrl = (url||GAS_URL) + '?' + params.toString();
+    // no-cors 제거 → 실제 응답 수신 가능 (GAS는 CORS 자동 허용)
+    fetch(fullUrl, {method:'GET'})
+      .then(r => r.json())
+      .then(j => console.log('GAS 응답:', j))
+      .catch(e => {
+        // CORS 실패 시 no-cors fallback
+        console.warn('GAS cors 실패, no-cors 재시도:', e);
+        fetch(fullUrl, {method:'GET', mode:'no-cors'}).catch(()=>{});
+      });
+  } catch(e) { console.error('sendToGAS 오류:', e); }
 }
 
 // ━━━ 임시저장/최종제출 버튼 상태 관리 ━━━
@@ -681,16 +690,7 @@ function doFinalSubmit() {
   lastEval.submitted = true;
   lastEval.submittedAt = new Date().toISOString();
   saveToStorage();
-  const a = appData.applicants.find(x => x.id===currentApplicantId);
-  sendToGAS(GAS_URL, {
-    projectTitle:appData.projectTitle, applicantName:a?.name, jobType:JOB_LABELS[a?.jobType],
-    department:a?.department, evaluatorName:currentUser.name, evalDate:lastEval.evalDate,
-    score1:lastEval.scores.s1, score2:lastEval.scores.s2, score3:lastEval.scores.s3,
-    score4:lastEval.scores.s4, score5:lastEval.scores.s5,
-    totalScore:lastEval.subTotal, bohunPoint:lastEval.bohunPoint,
-    finalScore:lastEval.finalScore, grade:lastEval.grade,
-    comment:'[최종제출] '+(lastEval.comment||'')
-  });
+  // GAS 전송은 "시트로 일괄 업로드" 버튼으로 통일 (Firebase → Sheet 동기화)
   document.getElementById('submitModal').classList.remove('open');
   renderApplicantList();
   showToast('최종 제출 완료! 수정이 불가능합니다.', 'success');
@@ -1053,7 +1053,7 @@ function markAbsent() {
   if (prevIdx>=0) appData.evaluations[prevIdx]=absentRecord;
   else appData.evaluations.push(absentRecord);
   saveToStorage();
-  sendToGAS(GAS_URL, {projectTitle:appData.projectTitle,applicantName:a.name,jobType:JOB_LABELS[a.jobType],department:a.department,evaluatorName:currentUser.name,evalDate:absentRecord.evalDate,score1:0,score2:0,score3:0,score4:0,score5:0,totalScore:0,bohunPoint:0,finalScore:0,grade:'결시',comment:'[결시]'});
+  // GAS 전송은 "시트로 일괄 업로드" 버튼으로 통일
   renderApplicantList();
   document.getElementById('evalBody').innerHTML=`
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
@@ -1340,11 +1340,46 @@ function loadPdfFile(e) {
 
 function saveGasUrl() { const url=document.getElementById('gasUrl').value.trim();localStorage.setItem('gasUrl',url);showToast('URL이 저장되었습니다','success');updateGasStatus(url?'saved':'empty'); }
 function testGasConnection() {
-  const url=document.getElementById('gasUrl').value.trim();
-  if(!url){showToast('URL을 먼저 입력해주세요','error');return;}
+  const url = document.getElementById('gasUrl').value.trim();
+  if (!url) { showToast('URL을 먼저 입력해주세요', 'error'); return; }
   updateGasStatus('testing');
-  sendToGAS(url,{projectTitle:'⚙️ 연결 테스트',applicantName:'TEST',jobType:'-',department:'-',evaluatorName:'시스템테스트',evalDate:new Date().toISOString().slice(0,10),score1:0,score2:0,score3:0,score4:0,score5:0,totalScore:0,bohunPoint:0,finalScore:0,grade:'테스트',comment:'연결 테스트 행 — 삭제하셔도 됩니다'});
-  updateGasStatus('sent');showToast('전송 완료! 5초 후 Google Sheets에 테스트 행이 추가됐는지 확인해주세요 📊','success');
+  showToast('연결 테스트 중...', '');
+
+  const params = new URLSearchParams({
+    projectTitle: '⚙️ 연결 테스트',
+    applicantName: 'TEST',
+    jobType: '-', department: '-',
+    evaluatorName: '시스템테스트',
+    evalDate: new Date().toISOString().slice(0,10),
+    score1:0, score2:0, score3:0, score4:0, score5:0,
+    totalScore:0, bohunPoint:0, finalScore:0,
+    grade:'테스트', comment:'연결 테스트 행 — 삭제하셔도 됩니다'
+  });
+
+  fetch(url + '?' + params.toString(), { method: 'GET' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.result === 'ok') {
+        updateGasStatus('ok');
+        showToast('✅ 연결 성공! Google Sheets에 테스트 행이 추가됐습니다.', 'success');
+      } else {
+        updateGasStatus('error');
+        showToast('❌ 응답 오류: ' + JSON.stringify(data), 'error');
+      }
+    })
+    .catch(e => {
+      // CORS 에러면 no-cors로 fallback (성공으로 간주)
+      console.warn('CORS 에러, fallback:', e);
+      fetch(url + '?' + params.toString(), { method: 'GET', mode: 'no-cors' })
+        .then(() => {
+          updateGasStatus('sent');
+          showToast('📊 전송 완료! Google Sheets를 직접 확인해주세요.', 'success');
+        })
+        .catch(() => {
+          updateGasStatus('error');
+          showToast('❌ 연결 실패. URL을 확인해주세요.', 'error');
+        });
+    });
 }
 function updateGasStatus(state) {
   const el=document.getElementById('gasStatus');
@@ -1559,19 +1594,29 @@ function printFinalReport() {
 }
 
 async function uploadAllToSheets() {
-  if(appData.evaluations.length===0){showToast('업로드할 평가 데이터가 없습니다','error');return;}
-  if(!confirm(`총 ${appData.evaluations.length}건의 평가 데이터를 시트로 업로드합니다.\n진행하시겠습니까?`))return;
-  let successCount=0;
-  for(const ev of appData.evaluations){
-    const a=appData.applicants.find(x=>x.id===ev.applicantId);if(!a)continue;
-    const params=new URLSearchParams();
-    const payload={projectTitle:appData.projectTitle,applicantName:a.name,jobType:JOB_LABELS[a.jobType]||'',department:a.department||'',evaluatorName:ev.evaluatorName,evalDate:ev.evalDate||'',score1:ev.scores?.s1||0,score2:ev.scores?.s2||0,score3:ev.scores?.s3||0,score4:ev.scores?.s4||0,score5:ev.scores?.s5||0,totalScore:ev.subTotal||0,bohunPoint:ev.bohunPoint||0,finalScore:ev.finalScore||0,grade:ev.grade||'',comment:(ev.submitted?'[최종제출] ':''+(ev.comment||''))};
-    Object.entries(payload).forEach(([k,v])=>params.append(k,v??''));
-    fetch(GAS_URL+'?'+params.toString(),{method:'GET',mode:'no-cors'}).then(()=>{}).catch(()=>{});
-    successCount++;
-    await new Promise(r=>setTimeout(r,200));
-  }
-  showToast(`✅ 업로드 완료! ${successCount}건`,'success');
+  if (!GAS_URL) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
+  if (appData.evaluations.length === 0) { showToast('업로드할 평가 데이터가 없습니다', 'error'); return; }
+  if (!confirm(`Firebase의 전체 평가 데이터를 Google Sheets로 동기화합니다.\n진행하시겠습니까?`)) return;
+
+  showToast('📤 시트 동기화 중...', '');
+
+  // GAS doGet() 파라미터 없이 호출 → syncFirebaseToSheet() 실행
+  fetch(GAS_URL, { method: 'GET' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.result === 'ok') {
+        showToast('✅ 시트 동기화 완료! Google Sheets를 확인해주세요.', 'success');
+      } else {
+        showToast('⚠️ 응답: ' + JSON.stringify(data), 'success');
+      }
+    })
+    .catch(e => {
+      // CORS 차단 시 no-cors fallback
+      console.warn('cors 실패, no-cors 재시도');
+      fetch(GAS_URL, { method: 'GET', mode: 'no-cors' })
+        .then(() => showToast('📤 전송 완료! Google Sheets를 확인해주세요.', 'success'))
+        .catch(() => showToast('❌ 업로드 실패. URL을 확인해주세요.', 'error'));
+    });
 }
 
 function exportData() {
