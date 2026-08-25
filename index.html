@@ -24,14 +24,12 @@
     };
 
     function setStatus(msg, color) {
-      // 로드 후 상태바에 표시 (DOM 준비 전이면 저장해 뒀다가 나중에 표시)
       window._fbStatusMsg = { msg: msg, color: color };
       var el = document.getElementById('fbStatus');
       if (el) { el.textContent = msg; el.style.color = color; }
     }
 
     try {
-      // firebase 객체 존재 확인
       if (typeof firebase === 'undefined') {
         throw new Error('firebase SDK 로드 실패 (CDN 차단 또는 네트워크 오류)');
       }
@@ -47,7 +45,6 @@
       window._fbRemove  = function(ref) { return ref.remove(); };
       window._fbReady   = true;
 
-      // 연결 테스트: .info/connected 감시
       db.ref('.info/connected').on('value', function(snap) {
         if (snap.val() === true) {
           setStatus('🔥 실시간 연결됨', '#86efac');
@@ -598,12 +595,10 @@ function sendToGAS(url, data) {
     const params = new URLSearchParams();
     Object.entries(data).forEach(([k,v]) => params.append(k, v ?? ''));
     const fullUrl = (url||GAS_URL) + '?' + params.toString();
-    // no-cors 제거 → 실제 응답 수신 가능 (GAS는 CORS 자동 허용)
     fetch(fullUrl, {method:'GET'})
       .then(r => r.json())
       .then(j => console.log('GAS 응답:', j))
       .catch(e => {
-        // CORS 실패 시 no-cors fallback
         console.warn('GAS cors 실패, no-cors 재시도:', e);
         fetch(fullUrl, {method:'GET', mode:'no-cors'}).catch(()=>{});
       });
@@ -611,20 +606,25 @@ function sendToGAS(url, data) {
 }
 
 // ━━━ 임시저장/최종제출 버튼 상태 관리 ━━━
+// [수정] 임시저장은 최종제출 전까지 몇 번이든 다시 누를 수 있어야 함.
+// 예전 코드는 hasTempSave=true가 되면 saveBtn을 영구 disabled 시켜서
+// "한 번 임시저장하면 값을 고쳐도 저장이 안 되는" 문제가 있었음.
 function updateSubmitButtonState(hasTempSave) {
   const saveBtn = document.getElementById('saveBtn');
   const submitBtn = document.getElementById('submitBtn');
   if (!saveBtn || !submitBtn) return;
+
+  // ① 임시저장 버튼: 최종제출 전까지는 항상 활성화 상태 유지
+  saveBtn.disabled = false;
+  saveBtn.style.cssText = 'flex:5;background:var(--navy);color:white;cursor:pointer;opacity:1;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;font-family:Pretendard,sans-serif;';
+  saveBtn.textContent = hasTempSave ? '① 수정 후 다시 저장' : '① 임시저장';
+
+  // ② 최종제출 버튼: 임시저장 기록이 있을 때만 활성화
   if (hasTempSave) {
-    saveBtn.disabled = true;
-    saveBtn.style.cssText = 'flex:5;background:#d1d5db;color:#9ca3af;cursor:not-allowed;opacity:0.6;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;font-family:Pretendard,sans-serif;';
     submitBtn.disabled = false;
     submitBtn.style.cssText = 'flex:5;background:var(--green);color:white;cursor:pointer;opacity:1;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;font-family:Pretendard,sans-serif;';
     submitBtn.textContent = '② 최종제출 ✅';
   } else {
-    saveBtn.disabled = false;
-    saveBtn.style.cssText = 'flex:5;background:var(--navy);color:white;cursor:pointer;opacity:1;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;font-family:Pretendard,sans-serif;';
-    saveBtn.textContent = '① 임시저장';
     submitBtn.disabled = true;
     submitBtn.style.cssText = 'flex:5;background:#9ca3af;color:white;cursor:not-allowed;opacity:0.5;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;font-family:Pretendard,sans-serif;';
     submitBtn.textContent = '② 최종제출';
@@ -691,7 +691,6 @@ function doFinalSubmit() {
   lastEval.submitted = true;
   lastEval.submittedAt = new Date().toISOString();
   saveToStorage();
-  // GAS 전송은 "시트로 일괄 업로드" 버튼으로 통일 (Firebase → Sheet 동기화)
   document.getElementById('submitModal').classList.remove('open');
   renderApplicantList();
   showToast('최종 제출 완료! 수정이 불가능합니다.', 'success');
@@ -736,11 +735,9 @@ function saveToStorage() {
 function loadFromStorage() { appData.evaluations=[]; appData.remarks={}; }
 
 function startFirebaseListener() {
-  // compat 방식: 동기 로드이므로 _fbReady가 이미 세팅돼 있음
   if (window._fbReady) {
     _doStartFirebaseListener();
   } else {
-    // 혹시 모를 상황 대비 짧은 폴링
     var tries = 0;
     var poll = setInterval(function() {
       if (window._fbReady) { clearInterval(poll); _doStartFirebaseListener(); return; }
@@ -758,13 +755,11 @@ function startFirebaseListener() {
 }
 
 function _doStartFirebaseListener() {
-  // 중복 실행 방지
   if (window._fbListenerStarted) return;
   window._fbListenerStarted = true;
   const {_fbDb:db,_fbRef:ref,_fbOnValue:onValue} = window;
   onValue(ref(db, FB_PATH), (snapshot) => {
     const fbStatus = document.getElementById('fbStatus');
-    // fbStatus는 .info/connected 리스너에서 업데이트
     const data = snapshot.val();
     if (!data) {
       appData.evaluations=[]; appData.remarks={};
@@ -785,7 +780,6 @@ function _doStartFirebaseListener() {
 }
 
 async function loadFromFirebase() {
-  // _fbReady 아직 안 됐으면 잠깐 기다림
   if (!window._fbReady) {
     await new Promise(resolve => {
       const poll = setInterval(() => { if(window._fbReady){clearInterval(poll);resolve();} }, 100);
@@ -894,7 +888,6 @@ function selectApplicant(id) {
   document.getElementById('evalPanelName').textContent=(a.num?a.num+'. ':'')+a.name;
   document.getElementById('evalPanelSub').textContent=`${a.department||''} · ${JOB_LABELS[a.jobType]}${a.bohun==='yes'?' · 보훈대상자':''}`;
   document.getElementById('evalFooter').style.display='flex';
-  // ★ 결시 버튼: 관리자만 표시
   const absentBtn = document.getElementById('absentBtn');
   if (absentBtn) absentBtn.style.display=(currentUser&&currentUser.isAdmin)?'':'none';
   renderEvalForm(a);
@@ -926,7 +919,7 @@ function renderEvalForm(a) {
 
   document.getElementById('evalBody').innerHTML = `
     ${isSubmitted?'<div style="background:#d1fae5;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:4px">✅ 최종 제출 완료 — 수정이 불가능합니다</div>':''}
-    ${myPrevEval&&!isSubmitted?'<div style="background:#fef3c7;border-radius:8px;padding:8px 14px;font-size:12px;color:#92400e;margin-bottom:4px">📝 임시저장된 평가가 있습니다. ② 최종제출 버튼을 눌러주세요.</div>':''}
+    ${myPrevEval&&!isSubmitted?'<div style="background:#fef3c7;border-radius:8px;padding:8px 14px;font-size:12px;color:#92400e;margin-bottom:4px">📝 임시저장된 평가가 있습니다. 값을 수정한 뒤 ① 버튼으로 다시 저장하거나, ② 최종제출 버튼을 눌러주세요.</div>':''}
     <div class="eval-section">
       <div class="eval-section-title">평가 기본 정보</div>
       <div class="eval-meta-grid">
@@ -1033,10 +1026,8 @@ function calcTotal() {
   document.getElementById('finalTotal').innerHTML=final+' <span>/ '+(a&&a.bohun==='yes'?'110':'100')+'점</span>';
 }
 
-// ★ markAbsent: 관리자만 실행 가능
 function markAbsent() {
   if (!currentUser||!currentApplicantId) return;
-  // ★ 관리자 체크
   if (!currentUser.isAdmin) { showToast('결시 처리는 관리자(인사담당자)만 가능합니다', 'error'); return; }
   const a=appData.applicants.find(x=>x.id===currentApplicantId);
   if (!a) return;
@@ -1054,7 +1045,6 @@ function markAbsent() {
   if (prevIdx>=0) appData.evaluations[prevIdx]=absentRecord;
   else appData.evaluations.push(absentRecord);
   saveToStorage();
-  // GAS 전송은 "시트로 일괄 업로드" 버튼으로 통일
   renderApplicantList();
   document.getElementById('evalBody').innerHTML=`
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
@@ -1091,7 +1081,7 @@ async function saveEvaluation() {
   const btn=document.getElementById('saveBtn');
   if (btn) { btn.textContent='💾 저장됨!'; btn.classList.add('saved'); }
   setTimeout(()=>{ renderEvalForm(appData.applicants.find(x=>x.id===currentApplicantId)); }, 1500);
-  showToast('임시저장 완료! ② 최종제출 버튼을 눌러주세요.','success');
+  showToast('임시저장 완료! 값을 계속 수정하거나 ② 최종제출 버튼을 눌러주세요.','success');
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1343,7 +1333,6 @@ function saveGasUrl() { const url=document.getElementById('gasUrl').value.trim()
 function testGasConnection() {
   const url = document.getElementById('gasUrl').value.trim();
   if (!url) { showToast('URL을 먼저 입력해주세요', 'error'); return; }
-  // GAS URL을 새 탭으로 열어서 직접 실행 (CORS 제한 없이 확실하게 동작)
   window.open(url, '_blank');
   updateGasStatus('ok');
   showToast('✅ 새 탭에서 GAS 실행됨! {"result":"ok"} 뜨면 연결 성공입니다.', 'success');
@@ -1564,7 +1553,6 @@ async function uploadAllToSheets() {
   if (!GAS_URL) { showToast('GAS URL이 설정되지 않았습니다', 'error'); return; }
   if (appData.evaluations.length === 0) { showToast('업로드할 평가 데이터가 없습니다', 'error'); return; }
   if (!confirm('Firebase → Google Sheets 동기화를 실행합니다.\n새 탭이 열리고 {"result":"ok"} 가 뜨면 성공입니다.\n진행하시겠습니까?')) return;
-  // GAS URL 새 탭으로 열기 → syncFirebaseToSheet() 자동 실행
   window.open(GAS_URL, '_blank');
   showToast('✅ 새 탭에서 시트 동기화 실행됨! {"result":"ok"} 확인하세요.', 'success');
 }
@@ -1670,7 +1658,6 @@ function checkFirebaseDebug() {
     return;
   }
   el.innerHTML += '✅ initializeApp 성공<br>';
-  // .info/connected 직접 읽기
   window._fbDb.ref('.info/connected').once('value').then(function(snap) {
     if (snap.val()) {
       el.innerHTML += '✅ Realtime DB 연결됨';
