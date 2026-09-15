@@ -562,7 +562,7 @@ const EVALUATORS = [
 const DEFAULT_APPLICANTS = [
   { id:'a001', num:'SYU-001', name:'한상운', department:'생활교육원 미화팀',        deptGroup:'생활교육원',        jobType:'labor',  bohun:'no', driveUrl:'https://drive.google.com/file/d/194Zs286vBuCWlXc3himBivP4GT7r6kq5/preview' },
   { id:'a002', num:'SYU-002', name:'최다은', department:'생활교육원 브니엘관',      deptGroup:'브니엘관',          jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1B7TZgkNfiWkrzHgrjeTdQzDV2YZcDkQe/preview' },
-  { id:'a003', num:'SYU-003', name:'박영진', department:'교육혁신원 교수학습개발센터', deptGroup:'교수학습개발센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1Cu1jUc8DqqVwwWQnVNIMiAlGUIjbiS2X/preview' },
+  { id:'a003', num:'SYU-003', name:'박영진', department:'교육혁신원 교수학습개발센터', deptGroup:'교수학습개발센터', jobType:'office', bohun:'no', note:'석사급연구원', driveUrl:'https://drive.google.com/file/d/1Cu1jUc8DqqVwwWQnVNIMiAlGUIjbiS2X/preview' },
   { id:'a004', num:'SYU-004', name:'김윤덕', department:'교무처 교양교육원',        deptGroup:'교양교육원',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1m4H3gRQr7lLgqKHQtBTKGx8TrYPGQpKc/preview' },
   { id:'a005', num:'SYU-005', name:'이경준', department:'교무처 교양교육원',        deptGroup:'교양교육원',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1sn0pWsij_g0SjyNmnNxJ857ODtKk5sYz/preview' },
   { id:'a006', num:'SYU-006', name:'정민지', department:'교무처 교양교육원',        deptGroup:'교양교육원',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1KTZFr7bo8j6lkLWZl26OodPA9bIcXtTg/preview' },
@@ -571,7 +571,7 @@ const DEFAULT_APPLICANTS = [
 ];
 
 let currentUser = null;
-let appData = { projectTitle:'2026년 9월 1일부 계약직 면접', applicants:DEFAULT_APPLICANTS, evaluations:[], remarks:{} };
+let appData = { projectTitle:'2026년 10월 1일부 계약직 면접', applicants:DEFAULT_APPLICANTS, evaluations:[], remarks:{} };
 let currentApplicantId = null;
 
 const EVAL_ITEMS = {
@@ -582,6 +582,7 @@ const EVAL_ITEMS = {
 };
 const JOB_LABELS = {office:'사무직',tech:'기술직',labor:'노무직',research:'연구직'};
 const JOB_BADGES = {office:'badge-office',tech:'badge-tech',labor:'badge-labor',research:'badge-research'};
+function noteBadge(a) { return a.note?`<span class="applicant-badge" style="background:#ede9fe;color:#5b21b6;margin-left:2px">${a.note}</span>`:''; }
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCKtDYGsB_W_EM7wwqOFsE4m4RupTCerIEBfacvgI9dE_sg0kBr5MK0AoU9hUAM_Fwqg/exec';
 const FB_PATH = 'interview_2026_08';
 
@@ -845,6 +846,7 @@ function renderApplicantList() {
         ${a.absent
           ? '<span class="applicant-badge" style="background:#fee2e2;color:var(--red)">🚫 결시</span>'
           : `<span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+             ${noteBadge(a)}
              ${a.bohun==='yes'?'<span class="applicant-badge badge-bohun">보훈</span>':''}
              ${isSubmitted?'<span class="applicant-badge" style="background:#dcfce7;color:#166534">✅ 제출완료</span>':
                myEval?'<span class="applicant-badge" style="background:#fef3c7;color:#92400e">임시저장</span>':''}`
@@ -879,7 +881,7 @@ function selectApplicant(id) {
   }
   document.getElementById('pdfPanelTitle').textContent=`📄 ${a.name} — 자기소개서`;
   document.getElementById('evalPanelName').textContent=(a.num?a.num+'. ':'')+a.name;
-  document.getElementById('evalPanelSub').textContent=`${a.department||''} · ${JOB_LABELS[a.jobType]}${a.bohun==='yes'?' · 보훈대상자':''}`;
+  document.getElementById('evalPanelSub').textContent=`${a.department||''} · ${JOB_LABELS[a.jobType]}${a.note?' · '+a.note:''}${a.bohun==='yes'?' · 보훈대상자':''}`;
   document.getElementById('evalFooter').style.display='flex';
   const absentBtn = document.getElementById('absentBtn');
   if (absentBtn) absentBtn.style.display=(currentUser&&currentUser.isAdmin)?'':'none';
@@ -1209,7 +1211,7 @@ function updateDashboard() {
         <td style="font-size:12px">${a.department||'-'}</td>
         <td style="font-size:12px;color:var(--gray-500)">${a.num||'-'}</td>
         <td><strong>${a.name}</strong>${a.absent?' <span style="font-size:11px;color:var(--red)">결시</span>':''}</td>
-        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>${a.bohun==='yes'?'<span class="applicant-badge badge-bohun" style="margin-left:2px">보훈</span>':''}</td>
+        <td><span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>${noteBadge(a)}${a.bohun==='yes'?'<span class="applicant-badge badge-bohun" style="margin-left:2px">보훈</span>':''}</td>
         ${evalCols}${emptyCols}
         <td style="font-weight:700;color:var(--gray-700)">${a.evalCount>0&&!a.absent?sumScore:'—'}</td>
         <td style="font-weight:700;color:var(--gray-700)">${a.evalCount>0&&!a.absent?a.avgScore:'—'}</td>
@@ -1236,6 +1238,7 @@ function updateDashboard() {
       <div class="eval-detail-card-header">
         <strong class="eval-detail-name">${a.name}</strong>
         <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        ${noteBadge(a)}
         <span style="font-size:12px;color:var(--gray-500)">${a.department||''}</span>
         <span style="margin-left:auto;font-weight:700;color:var(--navy)">최종 ${a.finalScore}점</span>
       </div>
@@ -1346,6 +1349,7 @@ function renderAbsenceList() {
           ${a.num?a.num+'. ':''}${a.name}
         </span>
         <span class="applicant-badge ${JOB_BADGES[a.jobType]}">${JOB_LABELS[a.jobType]}</span>
+        ${noteBadge(a)}
         <span style="font-size:12px;color:var(--gray-500)">${a.department}</span>
         ${a.absent?'<span class="applicant-badge" style="background:#fee2e2;color:var(--red)">🚫 결시</span>':''}
       </div>
@@ -1417,7 +1421,7 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
     const deptName=items[0]?.applicant?.department||'';
     const validItems=items.filter(({ev})=>!ev.isAbsent);
     const absentItems=items.filter(({ev})=>ev.isAbsent);
-    const applicantCols=validItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#f5f5f5;font-size:12px">${applicant.name}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}</th>`).join('')+absentItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#fef2f2;font-size:12px;color:#991b1b">${applicant.name}<br><span style="font-size:9px">결시</span></th>`).join('');
+    const applicantCols=validItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#f5f5f5;font-size:12px">${applicant.name}${applicant.note?'<br><span style="font-size:9px;color:#5b21b6">('+applicant.note+')</span>':''}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}</th>`).join('')+absentItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;min-width:80px;background:#fef2f2;font-size:12px;color:#991b1b">${applicant.name}<br><span style="font-size:9px">결시</span></th>`).join('');
     const scoreRows=ITEM_NAMES.map((name,idx)=>{const key='s'+(idx+1);const cells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[key]||0}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;background:#fef2f2;color:#991b1b">결시</td>`).join('');return `<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa">${name}</td>${cells}</tr>`;}).join('');
     const totalCells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:14px;color:#1a2744">${ev.subTotal}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`).join('');
     const hasBohun=validItems.some(({applicant})=>applicant.bohun==='yes');
