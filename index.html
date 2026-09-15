@@ -1045,6 +1045,7 @@ function markAbsent() {
   if (!confirm(`${a.name} 지원자를 결시 처리하시겠습니까?\n결시 처리 후에는 평가가 불가능합니다.`)) return;
   const absentRecord = {
     id:Date.now().toString(), applicantId:currentApplicantId,
+    applicantName:a.name||'', department:a.department||'', jobType:a.jobType||'',
     evaluatorName:currentUser.name, evalDate:new Date().toISOString().slice(0,10),
     scores:{s1:0,s2:0,s3:0,s4:0,s5:0}, subTotal:0, bohunPoint:0, finalScore:0,
     grade:'결시', comment:'[결시]', submitted:true, isAbsent:true,
@@ -1081,7 +1082,8 @@ async function saveEvaluation() {
   const bc=document.getElementById('bohunCheck'),bp=document.getElementById('bohunPoints');
   if (bc&&bc.checked) bohunPoint=parseInt(bp?.value)||0;
   const finalScore=subTotal+bohunPoint;
-  const evalRecord={id:Date.now().toString(),applicantId:currentApplicantId,evaluatorName,evalDate,scores,subTotal,bohunPoint,finalScore,grade,comment:document.getElementById('ef_comment')?.value||''};
+  const a=appData.applicants.find(x=>x.id===currentApplicantId);
+  const evalRecord={id:Date.now().toString(),applicantId:currentApplicantId,applicantName:a?.name||'',department:a?.department||'',jobType:a?.jobType||'',evaluatorName,evalDate,scores,subTotal,bohunPoint,finalScore,grade,comment:document.getElementById('ef_comment')?.value||''};
   const prevIdx=appData.evaluations.findLastIndex(e=>e.applicantId===currentApplicantId&&e.evaluatorName===evaluatorName);
   if (prevIdx>=0) appData.evaluations[prevIdx]={...appData.evaluations[prevIdx],...evalRecord,id:appData.evaluations[prevIdx].id};
   else appData.evaluations.push(evalRecord);
