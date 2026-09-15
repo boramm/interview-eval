@@ -387,6 +387,16 @@
         </div>
       </div>
       <div class="stat-cards" id="statCards"></div>
+      <div class="result-table-wrap" id="evaluatorAssignCard" style="display:none">
+        <div class="result-table-header">
+          <span class="result-table-title">👥 평가위원 배정 현황 (관리자 전용)</span>
+          <span style="font-size:12px;opacity:0.7">평가범위 · 담당 지원자 확인</span>
+        </div>
+        <div class="table-scroll"><table class="result-table" style="min-width:700px">
+          <thead><tr><th>이름</th><th>사번</th><th>구분</th><th>평가범위</th><th>담당 지원자</th></tr></thead>
+          <tbody id="evaluatorAssignBody"></tbody>
+        </table></div>
+      </div>
       <div class="result-table-wrap">
         <div class="result-table-header">
           <span class="result-table-title">📊 종합 순위표</span>
@@ -809,7 +819,10 @@ function showTab(tab) {
     document.getElementById('dashboardView').classList.add('active');
     updateDashboard();
     const finalBtn = document.getElementById('finalReportBtn');
-    if (finalBtn) finalBtn.style.display=(currentUser&&currentUser.employeeId==='005923')?'inline-flex':'none';
+    const isDashAdmin = currentUser&&currentUser.employeeId==='005923';
+    if (finalBtn) finalBtn.style.display=isDashAdmin?'inline-flex':'none';
+    const evalAssignCard = document.getElementById('evaluatorAssignCard');
+    if (evalAssignCard) { evalAssignCard.style.display=isDashAdmin?'block':'none'; if (isDashAdmin) renderEvaluatorAssignments(); }
   } else if (tab==='settings') {
     document.getElementById('tab-settings').classList.add('active');
     document.getElementById('settingsView').classList.add('active');
@@ -1159,6 +1172,23 @@ function adminDeleteEval(evalId) {
   renderApplicantList();
   updateDashboard();
   showToast(`삭제 완료`, 'success');
+}
+
+function renderEvaluatorAssignments() {
+  const body = document.getElementById('evaluatorAssignBody');
+  if (!body) return;
+  body.innerHTML = EVALUATORS.map(ev => {
+    const matched = ev.scope==='all' ? appData.applicants : appData.applicants.filter(a=>a.deptGroup===ev.scope);
+    const names = matched.map(a=>a.name+(a.absent?'(결시)':'')).join(', ') || '<span style="color:var(--red)">매칭되는 지원자 없음</span>';
+    return `
+    <tr>
+      <td><strong>${ev.name}</strong></td>
+      <td style="color:var(--gray-500)">${ev.employeeId}</td>
+      <td>${ev.isAdmin?'<span class="applicant-badge" style="background:#fde68a;color:#92400e">관리자</span>':'<span class="applicant-badge" style="background:var(--gray-100);color:var(--gray-600)">위원</span>'}</td>
+      <td>${ev.scope==='all'?'<strong style="color:var(--navy)">전체</strong>':ev.scope}</td>
+      <td style="text-align:left;font-size:12px">${names}</td>
+    </tr>`;
+  }).join('');
 }
 
 function updateDashboard() {
