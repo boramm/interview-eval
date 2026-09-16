@@ -1477,17 +1477,16 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
     if(!evalsByEvaluator[ev.evaluatorName])evalsByEvaluator[ev.evaluatorName]=[];
     if(!evalsByEvaluator[ev.evaluatorName].find(x=>x.applicant.id===a.id))evalsByEvaluator[ev.evaluatorName].push({ev,applicant:a});
   });
-  // ★ 결시자는 결시 처리한 사람(관리자)의 이름으로만 기록되어 있어서,
-  // 실제로 그 부서를 평가한 다른 위원들의 평가표에는 안 보이는 문제가 있었음.
-  // → 같은 부서를 평가한 모든 위원의 평가표에 결시자를 함께 표시해서, 결시 사실을 확인하고 서명할 수 있게 함.
+  // ★ 결시자는 "결시 처리한 사람"의 채점 기록으로만 판단하면, 결시 관리(설정)에서 체크한 경우처럼
+  // 채점 기록 자체가 없는 경우를 놓치게 됨. → 지원자 본인의 공용 결시 플래그(a.absent)를 기준으로 판단해서
+  // 결시 버튼이든 설정의 결시 관리 체크박스든 어떤 방식으로 처리했든 동일하게 반영되도록 함.
   const absentByDept={};
-  appData.evaluations.forEach(ev=>{
-    if(!ev.submitted||!ev.isAbsent)return;
-    const a=appData.applicants.find(x=>x.id===ev.applicantId);if(!a)return;
+  appData.applicants.forEach(a=>{
+    if(!a.absent)return;
     const dept=a.deptGroup||a.department||'기타';
     if(deptFilter&&dept!==deptFilter)return;
     if(!absentByDept[dept])absentByDept[dept]=[];
-    if(!absentByDept[dept].find(x=>x.applicant.id===a.id))absentByDept[dept].push({ev,applicant:a});
+    absentByDept[dept].push({ev:{isAbsent:true},applicant:a});
   });
   Object.keys(evalsByEvaluator).forEach(evName=>{
     const existingDepts=new Set(evalsByEvaluator[evName].map(x=>x.applicant.deptGroup||x.applicant.department||'기타'));
@@ -1499,6 +1498,18 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
   });
   const evaluatorList=Object.keys(evalsByEvaluator);
   if(evaluatorList.length===0){showToast('출력할 데이터가 없습니다.','error');return;}
+  // ★ 위원 한 명이 여러 부서를 평가한 경우(전체 스코프 위원 등), 부서를 뒤섞어 표 하나로 만들면 안 되므로
+  // 위원×부서 조합별로 페이지를 따로 만듦
+  const printPages=[];
+  evaluatorList.forEach(evName=>{
+    const byDept={};
+    evalsByEvaluator[evName].forEach(item=>{
+      const dept=item.applicant.deptGroup||item.applicant.department||'기타';
+      if(!byDept[dept])byDept[dept]=[];
+      byDept[dept].push(item);
+    });
+    Object.keys(byDept).forEach(dept=>{ printPages.push({evName,items:byDept[dept]}); });
+  });
   function buildPage(evName,items){
     items=[...items].sort((a,b)=>(a.applicant?.name||'').localeCompare(b.applicant?.name||'','ko'));
     const deptName=items[0]?.applicant?.department||'';
@@ -1551,7 +1562,7 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
       <div style="text-align:right;font-size:14px;padding-right:40px">면접위원 : <strong>${evName}</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(인)</div>
     </div>`;
   }
-  const allPages=evaluatorList.map(evName=>buildPage(evName,evalsByEvaluator[evName])).join('');
+  const allPages=printPages.map(p=>buildPage(p.evName,p.items)).join('');
   const deptLabel=deptFilter||'전체';
   const win=window.open('','_blank','width=900,height=1100');
   win.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>면접평가표 - ${deptLabel}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:sans-serif;padding:24px;background:white}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}@media print{@page{size:A4 landscape;margin:12mm}body{padding:0}.no-print{display:none!important}}</style></head><body>
