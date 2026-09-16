@@ -585,6 +585,13 @@ const EVALUATORS = [
   { name: '김진현', employeeId: '000239', scope: '시설관리팀',       isAdmin: false },
 ];
 
+// ★ 관리자(이보람)는 최종 승인용 계정일 뿐 실제 심사에 참여하지 않으므로,
+// 결과 집계·출력물(서명서, 최종결과표, 대시보드 순위/상세점수)에서는 관리자의 채점 기록을 제외한다.
+function isAdminEvaluatorName(name) {
+  const ev = EVALUATORS.find(e=>e.name===name);
+  return !!(ev && ev.isAdmin);
+}
+
 const DEFAULT_APPLICANTS = [
   { id:'a001', num:'SYU-001', name:'한상운', department:'사무처 시설관리팀 미화',   deptGroup:'시설관리팀',        jobType:'labor',  bohun:'no', driveUrl:'https://drive.google.com/file/d/194Zs286vBuCWlXc3himBivP4GT7r6kq5/preview' },
   { id:'a002', num:'SYU-002', name:'최다은', department:'생활교육원 브니엘관',      deptGroup:'브니엘관',          jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1B7TZgkNfiWkrzHgrjeTdQzDV2YZcDkQe/preview' },
@@ -748,15 +755,41 @@ function saveToStorage() {
     showToast('⚠️ 서버 연결 전이라 저장되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
     return;
   }
-  const {_fbDb:db,_fbRef:ref,_fbSet:set} = window;
-  set(ref(db, FB_PATH), {
+  // ★ set() 대신 update()를 써서 evaluations/remarks/projectTitle만 병합 저장하고,
+  // absences(결시) 필드는 여기서 건드리지 않음. (다른 사람이 무관한 임시저장을 하다가
+  // 그 사람 화면에 아직 안 반영된 옛 결시 상태로 absences를 덮어써버리는 경합 문제 방지)
+  const {_fbDb:db,_fbRef:ref,_fbUpdate:update} = window;
+  update(ref(db, FB_PATH), {
     evaluations:appData.evaluations, remarks:appData.remarks||{},
-    projectTitle:appData.projectTitle,
-    absences:appData.applicants.filter(a=>a.absent).map(a=>a.id)
+    projectTitle:appData.projectTitle
   }).catch(e=>{
     console.error('Firebase 저장 오류:',e);
     showToast('⚠️ 저장 실패: '+e.message, 'error');
   });
+}
+
+// ★ 결시 플래그 전용 저장 함수. 저장 직전에 Firebase의 최신 absences 값을 한 번 읽어와서
+// 그 위에 이번 변경만 반영한 뒤 absences 필드만 병합 저장함 — 동시에 여러 명이 접속해 있어도
+// 서로 다른 사람의 저장이 결시 처리를 되돌려버리는 일이 없도록 함.
+async function updateAbsenceFlag(applicantId, isAbsent) {
+  const applicant = appData.applicants.find(x=>x.id===applicantId);
+  if (applicant) applicant.absent = isAbsent; // 화면에는 즉시 반영
+  if (!window._fbReady) {
+    showToast('⚠️ 서버 연결 전이라 저장되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
+    return;
+  }
+  const {_fbDb:db,_fbRef:ref,_fbGet:get,_fbUpdate:update} = window;
+  try {
+    const snap = await get(ref(db, FB_PATH));
+    const current = snap.val()||{};
+    let absences = Array.isArray(current.absences) ? [...current.absences] : [];
+    if (isAbsent) { if (!absences.includes(applicantId)) absences.push(applicantId); }
+    else { absences = absences.filter(id=>id!==applicantId); }
+    await update(ref(db, FB_PATH), { absences });
+  } catch(e) {
+    console.error('결시 상태 저장 오류:', e);
+    showToast('⚠️ 결시 상태 저장 실패: '+e.message, 'error');
+  }
 }
 
 function loadFromStorage() { appData.evaluations=[]; appData.remarks={}; }
@@ -1068,7 +1101,6 @@ function markAbsent() {
   const myEval=appData.evaluations.find(e=>e.applicantId===currentApplicantId&&e.evaluatorName===currentUser.name);
   if (myEval?.isAbsent) { showToast('이미 결시 처리된 지원자입니다', 'error'); return; }
   if (!confirm(`${a.name} 지원자를 결시 처리하시겠습니까?\n결시 처리 후에는 평가가 불가능합니다.\n(다른 심사위원 화면에도 즉시 결시로 표시됩니다)`)) return;
-  a.absent = true; // ★ 관리자 개인의 채점 기록뿐 아니라, 공용 결시 플래그도 함께 켜서 모든 위원 화면에 실시간 반영
   const absentRecord = {
     id:Date.now().toString(), applicantId:currentApplicantId,
     applicantName:a.name||'', department:a.department||'', jobType:a.jobType||'',
@@ -1080,7 +1112,8 @@ function markAbsent() {
   const prevIdx=appData.evaluations.findIndex(e=>e.applicantId===currentApplicantId&&e.evaluatorName===currentUser.name);
   if (prevIdx>=0) appData.evaluations[prevIdx]=absentRecord;
   else appData.evaluations.push(absentRecord);
-  saveToStorage();
+  saveToStorage(); // 채점기록(evaluations) 저장
+  updateAbsenceFlag(currentApplicantId, true); // 공용 결시 플래그는 동시 저장 충돌 없이 별도로 안전하게 반영
   renderApplicantList();
   document.getElementById('evalBody').innerHTML=`
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px">
@@ -1197,7 +1230,7 @@ function adminDeleteEval(evalId) {
   appData.evaluations = appData.evaluations.filter(e=>e.id!==evalId);
   if (ev.isAbsent && a) {
     const stillAbsent = appData.evaluations.some(e=>e.applicantId===a.id&&e.isAbsent);
-    if (!stillAbsent) a.absent = false; // ★ 결시 기록을 지웠을 때 다른 결시 기록이 없으면 공용 결시 플래그도 함께 해제
+    if (!stillAbsent) updateAbsenceFlag(a.id, false); // 결시 기록을 지웠을 때 다른 결시 기록이 없으면 공용 결시 플래그도 함께 해제
   }
   saveToStorage();
   renderEvalDataList();
@@ -1236,22 +1269,22 @@ function updateDashboard() {
   `;
   document.getElementById('dashTitle').textContent=appData.projectTitle+' — 결과';
   const ranked=appData.applicants.map(a=>{
-    const evals=appData.evaluations.filter(e=>e.applicantId===a.id);
+    const evals=appData.evaluations.filter(e=>e.applicantId===a.id&&!isAdminEvaluatorName(e.evaluatorName));
     if (evals.length===0) return {...a,evalCount:0,avgScore:0,bohunPoint:0,finalScore:0,grades:[]};
     const avgScore=evals.reduce((s,e)=>s+e.subTotal,0)/evals.length;
     const bohunPoint=evals[evals.length-1].bohunPoint||0;
     return {...a,evalCount:evals.length,avgScore:Math.round(avgScore*10)/10,bohunPoint,finalScore:Math.round((avgScore+bohunPoint)*10)/10,grades:evals.map(e=>e.grade)};
   }).sort((a,b)=>b.finalScore-a.finalScore);
   const tbody=document.getElementById('resultTableBody');
-  const allEvaluatorNames=[...new Set(appData.evaluations.map(e=>e.evaluatorName))];
+  const allEvaluatorNames=[...new Set(appData.evaluations.map(e=>e.evaluatorName))].filter(n=>!isAdminEvaluatorName(n));
   const maxCols=6;
   const evalNames=allEvaluatorNames.slice(0,maxCols);
   for (let i=0;i<maxCols;i++){const th=document.getElementById('evalCol'+(i+1));if(th)th.textContent=evalNames[i]||'';}
   const allRanked=appData.applicants.map(a=>{
-    const evals=appData.evaluations.filter(e=>e.applicantId===a.id);
+    const evals=appData.evaluations.filter(e=>e.applicantId===a.id&&!isAdminEvaluatorName(e.evaluatorName));
     const avgScore=evals.length>0?evals.reduce((s,e)=>s+e.subTotal,0)/evals.length:0;
     const bohunPoint=evals.length>0?(evals[evals.length-1].bohunPoint||0):0;
-    const isAbsent=evals.some(e=>e.isAbsent);
+    const isAbsent=!!a.absent; // ★ 결시 여부는 채점 기록이 아니라 공용 결시 플래그로 판단 (관리자 기록 제외와 무관하게 항상 정확)
     return {...a,evals,evalCount:evals.length,avgScore:Math.round(avgScore*10)/10,bohunPoint,finalScore:Math.round((avgScore+bohunPoint)*10)/10,absent:isAbsent};
   }).sort((a,b)=>{
     if(a.absent&&!b.absent)return 1;if(!a.absent&&b.absent)return -1;return b.finalScore-a.finalScore;
@@ -1294,7 +1327,7 @@ function updateDashboard() {
       </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:16px">모든 지원자 평가 완료!</td></tr>';
   }
   const detailHtml=ranked.filter(a=>a.evalCount>0).map(a=>{
-    const evals=appData.evaluations.filter(e=>e.applicantId===a.id);
+    const evals=appData.evaluations.filter(e=>e.applicantId===a.id&&!isAdminEvaluatorName(e.evaluatorName));
     const items=EVAL_ITEMS[a.jobType];
     return `
     <div class="eval-detail-card">
@@ -1426,8 +1459,8 @@ function renderAbsenceList() {
 
 function toggleAbsence(id,isAbsent) {
   const idx=appData.applicants.findIndex(x=>x.id===id);if(idx<0)return;
-  appData.applicants[idx].absent=isAbsent;
-  saveToStorage();renderAbsenceList();renderApplicantList();
+  updateAbsenceFlag(id,isAbsent);
+  renderAbsenceList();renderApplicantList();
   if(currentApplicantId===id&&isAbsent){currentApplicantId=null;document.getElementById('evalBody').innerHTML='<div class="empty-state"><p>🚫 결시 처리된 지원자입니다</p></div>';document.getElementById('evalFooter').style.display='none';document.getElementById('pdfViewer').style.display='none';document.getElementById('pdfPlaceholder').style.display='flex';}
   showToast(isAbsent?'결시 처리되었습니다':'결시가 취소되었습니다',isAbsent?'error':'success');
 }
@@ -1440,7 +1473,10 @@ function openSignatureModal() {
   const evaluatorNames=[...new Set(appData.evaluations.filter(e=>e.submitted&&!e.isAbsent).map(e=>e.evaluatorName))];
   if(evaluatorNames.length===0){showToast('평가 데이터가 없습니다.','error');return;}
   const deptList=[...new Set(appData.applicants.map(a=>a.deptGroup||a.department))].filter(Boolean);
-  const deptOptions=['전체',...deptList].map(d=>`<option value="${d}">${d}</option>`).join('');
+  // deptGroup(축약형, 필터링용 값) → department(풀네임, 화면 표시용) 매핑
+  const deptFullNameMap={};
+  appData.applicants.forEach(a=>{ const g=a.deptGroup||a.department; if(g&&!deptFullNameMap[g]) deptFullNameMap[g]=a.department||g; });
+  const deptOptions=['전체',...deptList].map(d=>`<option value="${d}">${d==='전체'?'전체':(deptFullNameMap[d]||d)}</option>`).join('');
   let modal=document.getElementById('sigSelectModal');
   if(!modal){modal=document.createElement('div');modal.id='sigSelectModal';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`
@@ -1470,6 +1506,7 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
   const evalsByEvaluator={};
   appData.evaluations.forEach(ev=>{
     if(!ev.submitted)return;
+    if(isAdminEvaluatorName(ev.evaluatorName))return; // ★ 관리자는 실제 심사위원이 아니므로 서명서에서 제외 (결시 표시는 아래 absentByDept가 별도로 처리)
     const a=appData.applicants.find(x=>x.id===ev.applicantId);if(!a)return;
     const dept=a.deptGroup||a.department||'기타';
     if(deptFilter&&dept!==deptFilter)return;
@@ -1563,7 +1600,7 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
     </div>`;
   }
   const allPages=printPages.map(p=>buildPage(p.evName,p.items)).join('');
-  const deptLabel=deptFilter||'전체';
+  const deptLabel=deptFilter?(appData.applicants.find(a=>(a.deptGroup||a.department)===deptFilter)?.department||deptFilter):'전체';
   const win=window.open('','_blank','width=900,height=1100');
   win.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>면접평가표 - ${deptLabel}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:sans-serif;padding:24px;background:white}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}@media print{@page{size:A4 landscape;margin:12mm}body{padding:0}.no-print{display:none!important}}</style></head><body>
   <div class="no-print" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f3f4f6;border-radius:8px">
@@ -1577,11 +1614,11 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
 function printFinalReport() {
   const today=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
   const title=appData.projectTitle;
-  const evaluatorNames=[...new Set(appData.evaluations.filter(e=>e.submitted).map(e=>e.evaluatorName))];
+  const evaluatorNames=[...new Set(appData.evaluations.filter(e=>e.submitted).map(e=>e.evaluatorName))].filter(n=>!isAdminEvaluatorName(n));
   const deptGroups={};
   appData.applicants.forEach(a=>{const dept=a.deptGroup||a.department||'기타';if(!deptGroups[dept])deptGroups[dept]=[];deptGroups[dept].push(a);});
   function calcResult(a){
-    const evals=appData.evaluations.filter(e=>e.applicantId===a.id&&e.submitted);
+    const evals=appData.evaluations.filter(e=>e.applicantId===a.id&&e.submitted&&!isAdminEvaluatorName(e.evaluatorName));
     const scores={};evaluatorNames.forEach(n=>{const ev=evals.find(e=>e.evaluatorName===n);scores[n]=ev?ev.finalScore:null;});
     const valid=Object.values(scores).filter(s=>s!==null);
     const sum=valid.reduce((a,b)=>a+b,0);
@@ -1589,7 +1626,7 @@ function printFinalReport() {
     const itemAvg=[1,2,3,4,5].map(i=>{const vals=evals.map(e=>e.scores?.['s'+i]||0);return vals.length>0?vals.reduce((a,b)=>a+b,0)/vals.length:0;});
     return{...a,scores,sum,avg,evalCount:valid.length,itemAvg};
   }
-  const allResults=appData.applicants.map(a=>{const r=calcResult(a);if(r.evalCount>0&&Object.values(r.scores).every(s=>s===0||s===null))r.absent=true;return r;});
+  const allResults=appData.applicants.map(a=>{const r=calcResult(a);r.absent=!!a.absent;return r;}); // ★ 결시 여부는 공용 플래그로 직접 판단 (관리자만 처리한 결시도 정확히 반영)
   Object.keys(deptGroups).forEach(dept=>{
     const dr=allResults.filter(a=>(a.deptGroup||a.department)===dept&&!a.absent&&a.evalCount>0).sort((a,b)=>{if(b.avg!==a.avg)return b.avg-a.avg;for(let i=0;i<5;i++){const diff=(b.itemAvg?.[i]||0)-(a.itemAvg?.[i]||0);if(diff!==0)return diff;}return 0;});
     let rank=1;
