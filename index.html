@@ -1480,14 +1480,17 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
     const validItems=items.filter(({ev})=>!ev.isAbsent);
     const absentItems=items.filter(({ev})=>ev.isAbsent);
     const totalPeople=validItems.length+absentItems.length;
-    const headerColW=200;
+    // 왼쪽 기준 칸(부서명/평가항목/합계 등)이 줄바꿈되지 않도록, 실제로 들어갈 문구 중 가장 긴 글자수에 맞춰 폭을 계산
+    const labelTexts=['지원부서 : '+deptName,...ITEM_NAMES,'합계 (100점)','최종점수','종합평가 작성란','※ 추천이유 및 기타 소견'];
+    const maxLabelLen=Math.max(...labelTexts.map(t=>t.length));
+    const headerColW=Math.min(420, Math.max(220, maxLabelLen*13+40));
     const printAreaW=1000; // A4 가로 인쇄 영역(여백 제외) 대략값 — 지원자 수가 적을 때 표가 좌측에 좁게 붙지 않도록 열 너비를 동적으로 계산
-    const colW=Math.max(110, Math.floor((printAreaW-headerColW)/Math.max(totalPeople,1)));
+    const colW=Math.max(100, Math.floor((printAreaW-headerColW)/Math.max(totalPeople,1)));
     const applicantCols=validItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;width:${colW}px;background:#f5f5f5;font-size:12px">${applicant.name}${applicant.note?'<br><span style="font-size:9px;color:#5b21b6">('+applicant.note+')</span>':''}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}</th>`).join('')+absentItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;width:${colW}px;background:#fef2f2;font-size:12px;color:#991b1b">${applicant.name}<br><span style="font-size:9px">결시</span></th>`).join('');
-    const scoreRows=ITEM_NAMES.map((name,idx)=>{const key='s'+(idx+1);const cells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[key]||0}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;background:#fef2f2;color:#991b1b">결시</td>`).join('');return `<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa">${name}</td>${cells}</tr>`;}).join('');
+    const scoreRows=ITEM_NAMES.map((name,idx)=>{const key='s'+(idx+1);const cells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[key]||0}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;background:#fef2f2;color:#991b1b">결시</td>`).join('');return `<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa;white-space:nowrap">${name}</td>${cells}</tr>`;}).join('');
     const totalCells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:14px;color:#1a2744">${ev.subTotal}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`).join('');
     const hasBohun=validItems.some(({applicant})=>applicant.bohun==='yes');
-    const bohunRow=hasBohun?`<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fdf2f8;color:#9d174d;font-weight:600">보훈 가점</td>${validItems.map(({ev,applicant})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;color:#9d174d">${applicant.bohun==='yes'&&ev.bohunPoint>0?'+'+ev.bohunPoint:'—'}</td>`).join('')}${absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;background:#fef2f2"></td>`).join('')}</tr>`:'';
+    const bohunRow=hasBohun?`<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fdf2f8;color:#9d174d;font-weight:600;white-space:nowrap">보훈 가점</td>${validItems.map(({ev,applicant})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;color:#9d174d">${applicant.bohun==='yes'&&ev.bohunPoint>0?'+'+ev.bohunPoint:'—'}</td>`).join('')}${absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;background:#fef2f2"></td>`).join('')}</tr>`:'';
     const finalCells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:15px;color:#1a2744;background:#fefce8">${ev.finalScore}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`).join('');
     const gradeCells=validItems.map(({ev})=>`<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;font-size:10px;color:#374151">${gradeMap[ev.grade]||''}</td>`).join('')+absentItems.map(()=>`<td style="padding:6px 4px;border:1px solid #ccc;text-align:center;background:#fef2f2;font-size:10px;color:#991b1b">결시</td>`).join('');
     const commentCells=validItems.map(({ev})=>`<td style="padding:8px;border:1px solid #ccc;font-size:11px;color:#555;vertical-align:top">${(ev.comment||'').replace('[최종제출] ','')}</td>`).join('')+absentItems.map(()=>`<td style="padding:8px;border:1px solid #ccc;background:#fef2f2;font-size:11px;color:#991b1b;text-align:center">면접 결시</td>`).join('');
@@ -1502,7 +1505,7 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
       <table style="table-layout:fixed;border-collapse:collapse;font-size:12px;margin:0 auto 16px auto">
         <thead>
           <tr>
-            <th style="padding:8px 12px;border:1px solid #ccc;background:#1a2744;color:#e8c97a;font-size:13px;text-align:left;width:200px">지원부서 : ${deptName}</th>
+            <th style="padding:8px 12px;border:1px solid #ccc;background:#1a2744;color:#e8c97a;font-size:13px;text-align:left;width:${headerColW}px;white-space:nowrap">지원부서 : ${deptName}</th>
             ${applicantCols}
           </tr>
           <tr>
@@ -1512,11 +1515,11 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
         </thead>
         <tbody>
           ${scoreRows}
-          <tr style="background:#e8f0fe"><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px">합계 (100점)</td>${totalCells}</tr>
+          <tr style="background:#e8f0fe"><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;white-space:nowrap">합계 (100점)</td>${totalCells}</tr>
           ${bohunRow}
-          <tr style="background:#fefce8"><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px">최종점수</td>${finalCells}</tr>
-          <tr><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#f0f4ff">종합평가 작성란</td>${gradeCells}</tr>
-          <tr><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#fafafa">※ 추천이유 및 기타 소견</td>${commentCells}</tr>
+          <tr style="background:#fefce8"><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;white-space:nowrap">최종점수</td>${finalCells}</tr>
+          <tr><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#f0f4ff;white-space:nowrap">종합평가 작성란</td>${gradeCells}</tr>
+          <tr><td style="padding:7px 12px;border:1px solid #ccc;font-weight:700;text-align:center;font-size:12px;background:#fafafa;white-space:nowrap">※ 추천이유 및 기타 소견</td>${commentCells}</tr>
         </tbody>
       </table>
       <div style="text-align:center;font-size:13px;margin:20px 0 14px;color:#374151">${today}</div>
