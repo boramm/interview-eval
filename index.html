@@ -1470,7 +1470,27 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
     if(deptFilter&&dept!==deptFilter)return;
     if(evaluatorName&&ev.evaluatorName!==evaluatorName)return;
     if(!evalsByEvaluator[ev.evaluatorName])evalsByEvaluator[ev.evaluatorName]=[];
-    if(!evalsByEvaluator[ev.evaluatorName].find(x=>x.applicantId===ev.applicantId))evalsByEvaluator[ev.evaluatorName].push({ev,applicant:a});
+    if(!evalsByEvaluator[ev.evaluatorName].find(x=>x.applicant.id===a.id))evalsByEvaluator[ev.evaluatorName].push({ev,applicant:a});
+  });
+  // ★ 결시자는 결시 처리한 사람(관리자)의 이름으로만 기록되어 있어서,
+  // 실제로 그 부서를 평가한 다른 위원들의 평가표에는 안 보이는 문제가 있었음.
+  // → 같은 부서를 평가한 모든 위원의 평가표에 결시자를 함께 표시해서, 결시 사실을 확인하고 서명할 수 있게 함.
+  const absentByDept={};
+  appData.evaluations.forEach(ev=>{
+    if(!ev.submitted||!ev.isAbsent)return;
+    const a=appData.applicants.find(x=>x.id===ev.applicantId);if(!a)return;
+    const dept=a.deptGroup||a.department||'기타';
+    if(deptFilter&&dept!==deptFilter)return;
+    if(!absentByDept[dept])absentByDept[dept]=[];
+    if(!absentByDept[dept].find(x=>x.applicant.id===a.id))absentByDept[dept].push({ev,applicant:a});
+  });
+  Object.keys(evalsByEvaluator).forEach(evName=>{
+    const existingDepts=new Set(evalsByEvaluator[evName].map(x=>x.applicant.deptGroup||x.applicant.department||'기타'));
+    existingDepts.forEach(dept=>{
+      (absentByDept[dept]||[]).forEach(item=>{
+        if(!evalsByEvaluator[evName].find(x=>x.applicant.id===item.applicant.id))evalsByEvaluator[evName].push(item);
+      });
+    });
   });
   const evaluatorList=Object.keys(evalsByEvaluator);
   if(evaluatorList.length===0){showToast('출력할 데이터가 없습니다.','error');return;}
