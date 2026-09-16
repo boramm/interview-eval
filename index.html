@@ -1479,7 +1479,11 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
     const deptName=items[0]?.applicant?.department||'';
     const validItems=items.filter(({ev})=>!ev.isAbsent);
     const absentItems=items.filter(({ev})=>ev.isAbsent);
-    const applicantCols=validItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;width:110px;background:#f5f5f5;font-size:12px">${applicant.name}${applicant.note?'<br><span style="font-size:9px;color:#5b21b6">('+applicant.note+')</span>':''}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}</th>`).join('')+absentItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;width:110px;background:#fef2f2;font-size:12px;color:#991b1b">${applicant.name}<br><span style="font-size:9px">결시</span></th>`).join('');
+    const totalPeople=validItems.length+absentItems.length;
+    const headerColW=200;
+    const printAreaW=1000; // A4 가로 인쇄 영역(여백 제외) 대략값 — 지원자 수가 적을 때 표가 좌측에 좁게 붙지 않도록 열 너비를 동적으로 계산
+    const colW=Math.max(110, Math.floor((printAreaW-headerColW)/Math.max(totalPeople,1)));
+    const applicantCols=validItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;width:${colW}px;background:#f5f5f5;font-size:12px">${applicant.name}${applicant.note?'<br><span style="font-size:9px;color:#5b21b6">('+applicant.note+')</span>':''}${applicant.bohun==='yes'?'<br><span style="font-size:9px;color:#9d174d">(보훈)</span>':''}</th>`).join('')+absentItems.map(({applicant})=>`<th style="padding:7px 10px;border:1px solid #ccc;text-align:center;width:${colW}px;background:#fef2f2;font-size:12px;color:#991b1b">${applicant.name}<br><span style="font-size:9px">결시</span></th>`).join('');
     const scoreRows=ITEM_NAMES.map((name,idx)=>{const key='s'+(idx+1);const cells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px">${ev.scores[key]||0}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-size:13px;background:#fef2f2;color:#991b1b">결시</td>`).join('');return `<tr><td style="padding:7px 12px;border:1px solid #ccc;font-size:12px;background:#fafafa">${name}</td>${cells}</tr>`;}).join('');
     const totalCells=validItems.map(({ev})=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;font-weight:700;font-size:14px;color:#1a2744">${ev.subTotal}</td>`).join('')+absentItems.map(()=>`<td style="padding:7px 10px;border:1px solid #ccc;text-align:center;background:#fef2f2;color:#991b1b;font-weight:700">결시</td>`).join('');
     const hasBohun=validItems.some(({applicant})=>applicant.bohun==='yes');
@@ -1495,7 +1499,7 @@ function generateSignaturePrint(evaluatorName,deptFilter) {
         <div style="font-size:20px;font-weight:700;letter-spacing:4px">계약직원 채용 면접평가표</div>
         <div style="font-size:12px;color:#666;margin-top:4px">${title}</div>
       </div>
-      <table style="table-layout:fixed;border-collapse:collapse;font-size:12px;margin-bottom:16px">
+      <table style="table-layout:fixed;border-collapse:collapse;font-size:12px;margin:0 auto 16px auto">
         <thead>
           <tr>
             <th style="padding:8px 12px;border:1px solid #ccc;background:#1a2744;color:#e8c97a;font-size:13px;text-align:left;width:200px">지원부서 : ${deptName}</th>
