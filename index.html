@@ -301,7 +301,7 @@
     <div class="header-logo">삼육대학교</div>
     <div class="header-divider"></div>
     <div class="header-title-wrap">
-      <input type="text" id="projectTitle" value="2026년 9월 1일부 계약직 면접" title="클릭하여 제목 수정">
+      <input type="text" id="projectTitle" value="2026년 11월 1일부 계약직 면접" title="클릭하여 제목 수정">
       <span class="edit-icon">✏️</span>
     </div>
   </div>
@@ -460,7 +460,7 @@
           <div style="background:#1e1e1e;color:#86efac;border-radius:6px;padding:10px;margin:8px 0;font-family:monospace;font-size:12px;">
 {<br>
 &nbsp;&nbsp;"rules": {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;"interview_2026_08": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"interview_2026_11": {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".read": "auth != null",<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".write": "auth != null"<br>
 &nbsp;&nbsp;&nbsp;&nbsp;}<br>
@@ -570,20 +570,22 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ★ scope: 'all'(전체) / 부서 1개(문자열) / 부서 여러 개(배열) 모두 가능
 const EVALUATORS = [
-  { name: '이보람', employeeId: '005923', scope: 'all',            isAdmin: true  },
-  { name: '김성완', employeeId: '000163', scope: 'all',            isAdmin: false },
-  { name: '김현호', employeeId: '000206', scope: 'all',            isAdmin: false },
-  { name: '곽에스더', employeeId: '000232', scope: '브니엘관',       isAdmin: false },
-  { name: '류한철', employeeId: '000738', scope: '브니엘관',         isAdmin: false },
-  { name: '신동석', employeeId: '000122', scope: '교수학습개발센터', isAdmin: false },
-  { name: '이승원', employeeId: '000326', scope: '교수학습개발센터', isAdmin: false },
-  { name: '김명희', employeeId: '000673', scope: '교양교육원',       isAdmin: false },
-  { name: '이성희', employeeId: '000244', scope: '교양교육원',       isAdmin: false },
-  { name: '김논중', employeeId: '000171', scope: '평생교육팀',       isAdmin: false },
-  { name: '정현철', employeeId: '000322', scope: '평생교육팀',       isAdmin: false },
-  { name: '김진현', employeeId: '000239', scope: '시설관리팀',       isAdmin: false },
+  { name: '이보람', employeeId: '005923', scope: 'all', isAdmin: true  },
+  { name: '김성완', employeeId: '000163', scope: 'all', isAdmin: false }, // 사무처장
+  { name: '최정환', employeeId: '000267', scope: 'all', isAdmin: false }, // 총무인사팀장
+  { name: '이재동', employeeId: '000166', scope: '손님방', isAdmin: false },
+  { name: '이병재', employeeId: '000288', scope: '취업진로지원센터', isAdmin: false },
+  { name: '한영민', employeeId: '000248', scope: '체육문화센터 등록실', isAdmin: false },
+  { name: '정현철', employeeId: '000322', scope: ['체육문화센터 등록실','평생교육팀'], isAdmin: false },
 ];
+
+// 위원이 평가할 수 있는 지원자인지 확인 (부서가 1개든 여러 개든 처리)
+function inScope(user, a) {
+  if (!user || user.scope === 'all') return true;
+  return [].concat(user.scope).includes(a.deptGroup);
+}
 
 // ★ 관리자(이보람)는 최종 승인용 계정일 뿐 실제 심사에 참여하지 않으므로,
 // 결과 집계·출력물(서명서, 최종결과표, 대시보드 순위/상세점수)에서는 관리자의 채점 기록을 제외한다.
@@ -593,18 +595,22 @@ function isAdminEvaluatorName(name) {
 }
 
 const DEFAULT_APPLICANTS = [
-  { id:'a001', num:'SYU-001', name:'한상운', department:'사무처 시설관리팀 미화',   deptGroup:'시설관리팀',        jobType:'labor',  bohun:'no', driveUrl:'https://drive.google.com/file/d/194Zs286vBuCWlXc3himBivP4GT7r6kq5/preview' },
-  { id:'a002', num:'SYU-002', name:'최다은', department:'생활교육원 브니엘관',      deptGroup:'브니엘관',          jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1B7TZgkNfiWkrzHgrjeTdQzDV2YZcDkQe/preview' },
-  { id:'a003', num:'SYU-003', name:'박영진', department:'교육혁신원 교수학습개발센터', deptGroup:'교수학습개발센터', jobType:'office', bohun:'no', note:'석사급연구원', driveUrl:'https://drive.google.com/file/d/1Cu1jUc8DqqVwwWQnVNIMiAlGUIjbiS2X/preview' },
-  { id:'a004', num:'SYU-004', name:'김윤덕', department:'교무처 교양교육원',        deptGroup:'교양교육원',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1m4H3gRQr7lLgqKHQtBTKGx8TrYPGQpKc/preview' },
-  { id:'a005', num:'SYU-005', name:'이경준', department:'교무처 교양교육원',        deptGroup:'교양교육원',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1sn0pWsij_g0SjyNmnNxJ857ODtKk5sYz/preview' },
-  { id:'a006', num:'SYU-006', name:'정민지', department:'교무처 교양교육원',        deptGroup:'교양교육원',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1KTZFr7bo8j6lkLWZl26OodPA9bIcXtTg/preview' },
-  { id:'a007', num:'SYU-007', name:'박지영', department:'평생교육원 평생교육팀',    deptGroup:'평생교육팀',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1s5TZnFlGKJc7MLRFiNvS3J0ssgFkqR6j/preview' },
-  { id:'a008', num:'SYU-008', name:'이은배', department:'평생교육원 평생교육팀',    deptGroup:'평생교육팀',        jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1oY_d3IgXnsLLc3s3hAd6FoZD1Zbd5xuZ/preview' },
+  { id:'c001', num:'SYU-001', name:'한상운', department:'사무처 시설관리팀 미화', deptGroup:'시설관리팀 미화', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/19PtDVHlSQ29HaYEJLvbyZaknLQ-DXi9P/preview' },
+  { id:'c002', num:'SYU-002', name:'김영수', department:'사무처 시설관리팀 미화(손님방)', deptGroup:'손님방', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/151AejULjVdEbHvbVPrEtYz8bhBdfKrZb/preview' },
+  { id:'c003', num:'SYU-003', name:'김제붕', department:'사무처 총무인사팀 주차정산소', deptGroup:'주차정산소', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/1i9IQhoreU4DaXn8CyMtb2BcUINO95Z7K/preview' },
+  { id:'c004', num:'SYU-004', name:'홍기도', department:'사무처 총무인사팀 주차정산소', deptGroup:'주차정산소', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/1zc49y7n9yicozV3fbJhipAjR6G0U2RFh/preview' },
+  { id:'c005', num:'SYU-005', name:'김혜란', department:'사무처 총무인사팀 주차정산소', deptGroup:'주차정산소', jobType:'labor', bohun:'no', driveUrl:'https://drive.google.com/file/d/1fC9V5DtqRnrWt-TI9ddctwbYAFWEBEAO/preview' },
+  { id:'c006', num:'SYU-006', name:'이경준', department:'대학일자리본부 취업진로지원센터', deptGroup:'취업진로지원센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1_HsDI7_VPE-BgIPzKHS6Nr8I7g296Llj/preview' },
+  { id:'c007', num:'SYU-007', name:'곽다을', department:'대학일자리본부 취업진로지원센터', deptGroup:'취업진로지원센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1jJG0a_F34rPvpALe7o6ia2FYy9MUtq1C/preview' },
+  { id:'c008', num:'SYU-008', name:'지평강', department:'대학일자리본부 취업진로지원센터', deptGroup:'취업진로지원센터', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1-pfxcG_vVJnYPtfdhH3DxveruBGsQqoo/preview' },
+  { id:'c009', num:'SYU-009', name:'김종순', department:'체육문화센터 등록실(오전)', deptGroup:'체육문화센터 등록실', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1HuSHeRS6jKM3Sex6rY2xReKxZwtsDzex/preview' },
+  { id:'c010', num:'SYU-010', name:'김영아', department:'체육문화센터 등록실(오전)', deptGroup:'체육문화센터 등록실', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1bRiDYP6rWWxKAEhNRsLePl0Dk_y1CSfU/preview' },
+  { id:'c011', num:'SYU-011', name:'김유리', department:'평생교육원 평생교육팀', deptGroup:'평생교육팀', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1E3XVoTIT_oRtpz-77h2xTIdP6-RbcW51/preview' },
+  { id:'c012', num:'SYU-012', name:'최유연', department:'평생교육원 평생교육팀', deptGroup:'평생교육팀', jobType:'office', bohun:'no', driveUrl:'https://drive.google.com/file/d/1yUj7ovBWpw83B9A1YOCwp-1ec4FQ5NJr/preview' },
 ];
 
 let currentUser = null;
-let appData = { projectTitle:'2026년 10월 1일부 계약직 면접', applicants:DEFAULT_APPLICANTS, evaluations:[], remarks:{} };
+let appData = { projectTitle:'2026년 11월 1일부 계약직 면접', applicants:DEFAULT_APPLICANTS, evaluations:[], remarks:{} };
 let currentApplicantId = null;
 
 const EVAL_ITEMS = {
@@ -617,7 +623,7 @@ const JOB_LABELS = {office:'사무직',tech:'기술직',labor:'노무직',resear
 const JOB_BADGES = {office:'badge-office',tech:'badge-tech',labor:'badge-labor',research:'badge-research'};
 function noteBadge(a) { return a.note?`<span class="applicant-badge" style="background:#ede9fe;color:#5b21b6;margin-left:2px">${a.note}</span>`:''; }
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCKtDYGsB_W_EM7wwqOFsE4m4RupTCerIEBfacvgI9dE_sg0kBr5MK0AoU9hUAM_Fwqg/exec';
-const FB_PATH = 'interview_2026_08';
+const FB_PATH = 'interview_2026_11';
 
 function sendToGAS(url, data) {
   try {
@@ -635,9 +641,7 @@ function sendToGAS(url, data) {
 }
 
 // ━━━ 임시저장/최종제출 버튼 상태 관리 ━━━
-// [수정] 임시저장은 최종제출 전까지 몇 번이든 다시 누를 수 있어야 함.
-// 예전 코드는 hasTempSave=true가 되면 saveBtn을 영구 disabled 시켜서
-// "한 번 임시저장하면 값을 고쳐도 저장이 안 되는" 문제가 있었음.
+// 임시저장은 최종제출 전까지 몇 번이든 다시 누를 수 있어야 함.
 function updateSubmitButtonState(hasTempSave) {
   const saveBtn = document.getElementById('saveBtn');
   const submitBtn = document.getElementById('submitBtn');
@@ -895,7 +899,7 @@ function renderApplicantList() {
   const count = document.getElementById('applicantCount');
   count.textContent = appData.applicants.length+'명';
   let visible = appData.applicants;
-  if (currentUser&&currentUser.scope!=='all') visible=appData.applicants.filter(a=>a.deptGroup===currentUser.scope);
+  if (currentUser) visible=appData.applicants.filter(a=>inScope(currentUser,a));
   if (visible.length===0) { list.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">평가할 지원자가 없습니다</div>'; updateTabletSelect(visible); return; }
   list.innerHTML = visible.map(a => {
     const evals = appData.evaluations.filter(e=>e.applicantId===a.id);
@@ -1243,14 +1247,14 @@ function renderEvaluatorAssignments() {
   const body = document.getElementById('evaluatorAssignBody');
   if (!body) return;
   body.innerHTML = EVALUATORS.map(ev => {
-    const matched = ev.scope==='all' ? appData.applicants : appData.applicants.filter(a=>a.deptGroup===ev.scope);
+    const matched = appData.applicants.filter(a=>inScope(ev,a));
     const names = matched.map(a=>a.name+(a.absent?'(결시)':'')).join(', ') || '<span style="color:var(--red)">매칭되는 지원자 없음</span>';
     return `
     <tr>
       <td><strong>${ev.name}</strong></td>
       <td style="color:var(--gray-500)">${ev.employeeId}</td>
       <td>${ev.isAdmin?'<span class="applicant-badge" style="background:#fde68a;color:#92400e">관리자</span>':'<span class="applicant-badge" style="background:var(--gray-100);color:var(--gray-600)">위원</span>'}</td>
-      <td>${ev.scope==='all'?'<strong style="color:var(--navy)">전체</strong>':ev.scope}</td>
+      <td>${ev.scope==='all'?'<strong style="color:var(--navy)">전체</strong>':[].concat(ev.scope).join(', ')}</td>
       <td style="text-align:left;font-size:12px">${names}</td>
     </tr>`;
   }).join('');
@@ -1768,13 +1772,13 @@ function updateNavigationButtons(visibleApplicants) {
 function selectApplicantFromTablet(id) { if(!id)return;selectApplicant(id); }
 function navigatePrevApplicant() {
   let visible=appData.applicants.filter(a=>!a.absent);
-  if(currentUser&&currentUser.scope!=='all')visible=visible.filter(a=>a.deptGroup===currentUser.scope);
+  if(currentUser)visible=visible.filter(a=>inScope(currentUser,a));
   const idx=visible.findIndex(a=>a.id===currentApplicantId);
   if(idx>0)selectApplicant(visible[idx-1].id);
 }
 function navigateNextApplicant() {
   let visible=appData.applicants.filter(a=>!a.absent);
-  if(currentUser&&currentUser.scope!=='all')visible=visible.filter(a=>a.deptGroup===currentUser.scope);
+  if(currentUser)visible=visible.filter(a=>inScope(currentUser,a));
   const idx=visible.findIndex(a=>a.id===currentApplicantId);
   if(idx>=0&&idx<visible.length-1)selectApplicant(visible[idx+1].id);
 }
